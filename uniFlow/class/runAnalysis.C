@@ -90,7 +90,7 @@ void runAnalysis()
     // Flow
     task1->SetFlowRFPsPtMin(0.2);
     task1->SetFlowRFPsPtMax(5.);
-    // task1->SetFlowDoFourCorrelations(kFALSE);
+    task1->SetFlowDoFourCorrelations(kFALSE);
     task1->SetFlowFillWeights(kFALSE);
     // task1->SetUseWeigthsFile("alien:///alice/cern.ch/user/v/vpacik/weights_preliminary_16q.root",kFALSE);
     // Events selection

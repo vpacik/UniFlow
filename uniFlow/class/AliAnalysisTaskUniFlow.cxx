@@ -100,6 +100,7 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow() : AliAnalysisTaskSE(),
   fProcessPhi(kFALSE),
 
   // flow related
+  fUseFlowForSubtraction(kFALSE),
   fUseFixedMultBins(kFALSE),
   fCutFlowRFPsPtMin(0.),
   fCutFlowRFPsPtMax(0.),
@@ -372,6 +373,7 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow(const char* name) : AliAnalysisTa
   fProcessPhi(kFALSE),
 
   // flow related
+  fUseFlowForSubtraction(kFALSE),
   fUseFixedMultBins(kFALSE),
   fCutFlowRFPsPtMin(0.),
   fCutFlowRFPsPtMax(0.),
@@ -1525,6 +1527,7 @@ void AliAnalysisTaskUniFlow::ListParameters()
   printf("      fProcessV0s: (Bool_t) %s\n",    fProcessV0s ? "kTRUE" : "kFALSE");
   printf("   -------- Flow related ----------------------------------------\n");
   printf("      fCutFlowDoFourCorrelations: (Bool_t) %s\n",    fCutFlowDoFourCorrelations ? "kTRUE" : "kFALSE");
+  printf("      fUseFlowForSubtraction: (Bool_t) %s\n",    fUseFlowForSubtraction ? "kTRUE" : "kFALSE");
   printf("      fCutFlowRFPsPtMin: (Double_t) %g (GeV/c)\n",    fCutFlowRFPsPtMin);
   printf("      fCutFlowRFPsPtMax: (Double_t) %g (GeV/c)\n",    fCutFlowRFPsPtMax);
   printf("      fFlowPOIsPtMin: (Double_t) %g (GeV/c)\n",    fFlowPOIsPtMin);
@@ -3543,6 +3546,16 @@ Bool_t AliAnalysisTaskUniFlow::ProcessEvent()
   if(fRunMode == kFillWeights) { fEventCounter++; return kTRUE; }
 
   // >>>> flow starts here <<<<
+  // >>>> Flow for pA-pp subtraction method (similar to SP u*Q) <<<<
+  if(fUseFlowForSubtraction)
+  {
+
+
+    fEventCounter++; // counter of processed events
+    return kTRUE;
+  }
+
+
   // >>>> Flow a la General Framework <<<<
   for(Short_t iGap(0); iGap < fNumEtaGap; iGap++)
   {
