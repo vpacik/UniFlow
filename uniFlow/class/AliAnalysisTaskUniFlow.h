@@ -357,6 +357,16 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       TH3D*           fh3PhiEntriesBGPos[fNumEtaGap]; //! distribution of phi background candidates / like-sign pairs (cent, pT, InvMass)
       TH3D*           fh3PhiEntriesBGNeg[fNumEtaGap]; //! distribution of phi background candidates / like-sign pairs (cent, pT, InvMass)
 
+      TH3D*           fh3V0sEntriesK0sPos_multScaled[fNumEtaGap]; //! distribution of K0s candidates (cent, pT, InvMass)
+      TH3D*           fh3V0sEntriesK0sNeg_multScaled[fNumEtaGap]; //! distribution of K0s candidates (cent, pT, InvMass)
+      TH3D*           fh3V0sEntriesLambdaPos_multScaled[fNumEtaGap]; //! distribution of (Anti-)Lambda candidates (cent, pT, InvMass)
+      TH3D*           fh3V0sEntriesLambdaNeg_multScaled[fNumEtaGap]; //! distribution of (Anti-)Lambda candidates (cent, pT, InvMass)
+      TH3D*           fh3PhiEntriesSignalPos_multScaled[fNumEtaGap]; //! distribution of phi candidates / unlike-sign pairs (cent, pT, InvMass)
+      TH3D*           fh3PhiEntriesSignalNeg_multScaled[fNumEtaGap]; //! distribution of phi candidates / unlike-sign pairs (cent, pT, InvMass)
+      TH3D*           fh3PhiEntriesBGPos_multScaled[fNumEtaGap]; //! distribution of phi background candidates / like-sign pairs (cent, pT, InvMass)_multScaled
+      TH3D*           fh3PhiEntriesBGNeg_multScaled[fNumEtaGap]; //! distribution of phi background candidates / like-sign pairs (cent, pT, InvMass)
+
+
       TH3D*           fh3WeightsRefs; //! distribution of Refs particles for estimating weight purpose (phi,eta,pt)
       TH3D*           fh3WeightsCharged; //! distribution of Charged POIs particles for estimating weight purpose (phi,eta,pt)
       TH3D*           fh3WeightsPion; //! distribution of Pion POIs particles for estimating weight purpose (phi,eta,pt)
@@ -605,7 +615,7 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       AliAnalysisTaskUniFlow(const AliAnalysisTaskUniFlow&); // not implemented
       AliAnalysisTaskUniFlow& operator=(const AliAnalysisTaskUniFlow&); // not implemented
 
-      ClassDef(AliAnalysisTaskUniFlow, 4);
+      ClassDef(AliAnalysisTaskUniFlow, 5);
 };
 
 #endif
