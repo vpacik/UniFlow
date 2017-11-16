@@ -202,6 +202,9 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow() : AliAnalysisTaskSE(),
   fFlowK0s(0x0),
   fFlowLambda(0x0),
 
+  // subtraction
+  fpRefsMult(0x0),
+
   // flow histograms & profiles
   fh3WeightsRefs(0x0),
   fh3WeightsCharged(0x0),
@@ -475,6 +478,9 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow(const char* name) : AliAnalysisTa
   fFlowK0s(0x0),
   fFlowLambda(0x0),
 
+  // subtraction
+  fpRefsMult(0x0),
+
   // flow histograms & profiles
   fh3WeightsRefs(0x0),
   fh3WeightsCharged(0x0),
@@ -666,6 +672,12 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow(const char* name) : AliAnalysisTa
         fp2KaonCor2Neg[iSample][iGap][iHarm] = 0x0;
         fp2ProtonCor2Pos[iSample][iGap][iHarm] = 0x0;
         fp2ProtonCor2Neg[iSample][iGap][iHarm] = 0x0;
+
+        if(fUseFlowForSubtraction)
+        {
+          fpRefsCor2_multScaled[iSample][iGap][iHarm] = 0x0;
+
+        }
       }
 
       fp3V0sCorrK0sCor2Pos[iGap][iHarm] = 0x0;
@@ -946,6 +958,13 @@ void AliAnalysisTaskUniFlow::UserCreateOutputObjects()
       fFlowWeights->Add(fh3AfterWeightsLambda);
     }
 
+    if(fUseFlowForSubtraction)
+    {
+      fpRefsMult = new TProfile("fpRefsMult","Ref mult", fFlowCentNumBins,fFlowCentMin,fFlowCentMax);
+      fpRefsMult->Sumw2();
+      fFlowRefs->Add(fpRefsMult);
+    }
+
     // candidate distribution for flow-mass method
     for(Short_t iGap(0); iGap < fNumEtaGap; iGap++)
     {
@@ -1002,6 +1021,14 @@ void AliAnalysisTaskUniFlow::UserCreateOutputObjects()
           fpRefsCor2[iSample][iGap][iHarm] = new TProfile(Form("fpRefs_<2>_harm%d_gap%02.2g_sample%d",fHarmonics[iHarm],10*fEtaGap[iGap],iSample),Form("Ref: <<2>> | Gap %g | n=%d | sample %d ; centrality/multiplicity;",fEtaGap[iGap],fHarmonics[iHarm],iSample), fFlowCentNumBins,fFlowCentMin,fFlowCentMax);
           fpRefsCor2[iSample][iGap][iHarm]->Sumw2(kTRUE);
           fFlowRefs->Add(fpRefsCor2[iSample][iGap][iHarm]);
+
+          if(fUseFlowForSubtraction)
+          {
+            fpRefsCor2_multScaled[iSample][iGap][iHarm] = new TProfile(Form("fpRefs_multScaled_<2>_harm%d_gap%02.2g_sample%d",fHarmonics[iHarm],10*fEtaGap[iGap],iSample),Form("Ref (Mult scaled): <<2>> | Gap %g | n=%d | sample %d ; centrality/multiplicity;",fEtaGap[iGap],fHarmonics[iHarm],iSample), fFlowCentNumBins,fFlowCentMin,fFlowCentMax);
+            fpRefsCor2_multScaled[iSample][iGap][iHarm]->Sumw2(kTRUE);
+            fFlowRefs->Add(fpRefsCor2_multScaled[iSample][iGap][iHarm]);
+
+          }
 
           if(fCutFlowDoFourCorrelations && iGap == 0)
           {
@@ -1129,6 +1156,7 @@ void AliAnalysisTaskUniFlow::UserCreateOutputObjects()
       }
     }
 
+    // QA histograms
     // charged (tracks) histograms
     fhRefsMult = new TH1D("fhRefsMult","RFPs: Multiplicity; multiplicity", 1000,0,1000);
     fQACharged->Add(fhRefsMult);
@@ -3549,7 +3577,34 @@ Bool_t AliAnalysisTaskUniFlow::ProcessEvent()
   // >>>> Flow for pA-pp subtraction method (similar to SP u*Q) <<<<
   if(fUseFlowForSubtraction)
   {
+    for(Short_t iGap(0); iGap < fNumEtaGap; iGap++)
+    {
+      FillRefsVectors(iGap);
 
+      fpRefsMult->Fill(fIndexCentrality,fVectorRefs->size());
+
+      Int_t iHarm = 0;
+      Int_t iHarmonics = fHarmonics[iHarm];
+      {
+        // reference flow
+        if(fEtaGap[iGap] > -1.0) // gap case
+        {
+          Double_t dValue = TwoGap(iHarmonics,-iHarmonics).Re();
+          Double_t dMult = TwoGap(0,0).Re();
+          fpRefsCor2[fIndexSampling][iGap][iHarm]->Fill(fIndexCentrality, dValue);
+          if(dMult > 0.0) fpRefsCor2_multScaled[fIndexSampling][iGap][iHarm]->Fill(fIndexCentrality, dValue/dMult);
+        }
+        else // no gap case
+        {
+          Double_t dValue = Two(iHarmonics,-iHarmonics).Re();
+          Double_t dMult = Two(0,0).Re();
+          fpRefsCor2[fIndexSampling][iGap][iHarm]->Fill(fIndexCentrality, dValue);
+          fpRefsCor2_multScaled[fIndexSampling][iGap][iHarm]->Fill(fIndexCentrality, dValue/dMult);
+        }
+      }
+
+      // DoFlowForSubtraction(iGap,kKaon);
+    }
 
     fEventCounter++; // counter of processed events
     return kTRUE;
@@ -4095,6 +4150,136 @@ void AliAnalysisTaskUniFlow::DoFlowV0s(const Short_t iEtaGapIndex, const Short_t
       }
     } // endif {dEtaGap}
   } // endfor {iPt}
+  return;
+}
+//_____________________________________________________________________________
+void AliAnalysisTaskUniFlow::DoFlowForSubtraction(const Short_t iEtaGapIndex, const PartSpecies species)
+{
+  // Calculate the correlations for pA-pp subtraction in a single event
+  // *************************************************************
+  printf("========= event ==========\n");
+
+  Double_t dEtaGap = fEtaGap[iEtaGapIndex];
+  Double_t dEtaLimit = 0.0;
+  if(dEtaGap > -1.0) { dEtaLimit = dEtaGap / 2.0; } // case with eta-gap
+
+
+  Bool_t bHasMass = kFALSE;
+  std::vector<AliVTrack*>* vector = 0x0;
+
+  TH1** profPos = 0x0;
+  TH1** profNeg = 0x0;
+
+  switch(species)
+  {
+    case kUnknown :
+      return;
+      break;
+
+    case kCharged :
+      profPos = (TH1**) fp2ChargedCor2Pos[fIndexSampling][iEtaGapIndex];
+      if(dEtaGap > -1.0 ) profNeg = (TH1**) fp2ChargedCor2Neg[fIndexSampling][iEtaGapIndex];
+      vector = fVectorCharged;
+      break;
+
+    case kPion :
+      profPos = (TH1**) fp2PionCor2Pos[fIndexSampling][iEtaGapIndex];
+      if(dEtaGap > -1.0 ) profNeg = (TH1**) fp2PionCor2Neg[fIndexSampling][iEtaGapIndex];
+      vector = fVectorPion;
+      break;
+
+    case kKaon :
+      profPos = (TH1**) fp2KaonCor2Pos[fIndexSampling][iEtaGapIndex];
+      if(dEtaGap > -1.0 ) profNeg = (TH1**) fp2KaonCor2Neg[fIndexSampling][iEtaGapIndex];
+      vector = fVectorKaon;
+      break;
+
+    case kProton :
+      profPos = (TH1**) fp2ProtonCor2Pos[fIndexSampling][iEtaGapIndex];
+      if(dEtaGap > -1.0 ) profNeg = (TH1**) fp2ProtonCor2Neg[fIndexSampling][iEtaGapIndex];
+      vector = fVectorProton;
+      break;
+
+    case kK0s :
+      profPos = (TH1**) fp3V0sCorrK0sCor2Pos[fIndexSampling][iEtaGapIndex];
+      if(dEtaGap > -1.0 ) profNeg = (TH1**) fp3V0sCorrK0sCor2Neg[fIndexSampling][iEtaGapIndex];
+      bHasMass = kTRUE;
+      vector = fVectorK0s;
+      break;
+
+    case kLambda :
+      profPos = (TH1**) fp3V0sCorrLambdaCor2Pos[fIndexSampling][iEtaGapIndex];
+      if(dEtaGap > -1.0 ) profNeg = (TH1**) fp3V0sCorrLambdaCor2Neg[fIndexSampling][iEtaGapIndex];
+      bHasMass = kTRUE;
+      vector = fVectorLambda;
+      break;
+
+    case kPhi :
+      profPos = (TH1**) fp3PhiCorrCor2Pos[fIndexSampling][iEtaGapIndex];
+      if(dEtaGap > -1.0 ) profNeg = (TH1**) fp3PhiCorrCor2Neg[fIndexSampling][iEtaGapIndex];
+      bHasMass = kTRUE;
+      vector = fVectorPhi;
+      break;
+
+    default :
+      return;
+      break;
+  }
+
+  if(!profPos) { AliError("Positive profile does not exists!"); return; }
+  if(dEtaGap > -1.0 && !profNeg) { AliError("Negative profile does not exists!"); return; }
+
+  Int_t iNumRefs = fVectorRefs->size(); // reference particles multiplicity
+  Int_t iNumPOis = vector->size();
+  Int_t iHarm = 2;
+
+  Double_t dMultPos = QGapPos(0,1);
+  Double_t dMultNeg = QGapNeg(0,1);
+  Double_t dMult = Q(0,1).Re();
+
+  // loop over particles
+  for (auto part = vector->begin(); part != vector->end(); part++)
+  {
+    Double_t dWeight = 1.0;
+    Double_t dPt = (*part)->Pt();
+    Double_t dPhi = (*part)->Phi();
+    Double_t dEta = (*part)->Eta();
+    Double_t dMass = 0.0;
+
+    // POIs mass bin check for V0s candidates
+    if(bHasMass) { dMass = (*part)->M(); }
+
+    Double_t dValue = 0.0;
+
+    // estimating u (in Pos|Neg sub-event)
+    if(dEtaGap > -1.0) // case with eta-gap
+    {
+      if(dEta > dEtaLimit)
+      {
+        TComplex u = TComplex(dWeight * TMath::Cos(iHarm * dPhi), dWeight * TMath::Sin(iHarm * dPhi), kFALSE);
+        dValue = (u*QGapNeg(-iHarm,1)).Re();
+
+        if(bHasMass) { dynamic_cast<TProfile3D*>(profPos[iHarm])->Fill(fIndexCentrality,dPt,dMass,dValue); }
+        else { dynamic_cast<TProfile2D*>(profPos[iHarm])->Fill(fIndexCentrality,dPt,dValue); }
+
+      }
+
+      if(dEta < -dEtaLimit)
+      {
+        TComplex u = TComplex(dWeight * TMath::Cos(iHarm * dPhi), dWeight * TMath::Sin(iHarm * dPhi), kFALSE);
+        dValue = (u*QGapPos(-iHarm,1)).Re();
+      }
+    }
+    else // case without eta-gap
+    {
+      TComplex u = TComplex(dWeight * TMath::Cos(iHarm * dPhi), dWeight * TMath::Sin(iHarm * dPhi), kFALSE);
+      dValue = (u*Q(-iHarm,1)).Re();
+    }
+
+    printf("dEta %g | dValue %g | Mult %d | Refs %d \n",dEta,dValue,iNumPOis,iNumRefs);
+
+  }
+
   return;
 }
 //_____________________________________________________________________________
