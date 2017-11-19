@@ -211,6 +211,7 @@ class ProcessUniFlow
     void        SetOutputFileName(const char* name) { fsOutputFileName = name; }
     void        SetOutputFileMode(const char* mode = "RECREATE") { fsOutputFileMode = mode; }
     void        SetTaskName(const char* name) { fsTaskName = name; }
+    void        SetGlobalProfNameLabel(const char* label = "") { fsGlobalProfNameLabel = label; } // add global profile label for all tasks NOTE: for the purpose of Flow sub
     void        SetMultiplicityBins(Double_t* array, const Short_t size); // setup the global multiplicity binning, where size is number of elements in array
     void        SetDebug(Bool_t debug = kTRUE) { fbDebug = debug; }
     void        AddTask(FlowTask* task = 0x0); // add task to internal lists of all tasks
@@ -263,6 +264,7 @@ class ProcessUniFlow
     TString     fsOutputFileMode; // [RECREATE] mode of output file
     TString     fsTaskName; // name of task (inchluded in data structure names)
     TString     fsOutputFileFormat; // [pdf] format of output files (pictures)
+    TString     fsGlobalProfNameLabel; // global profile label for all task
 
     Bool_t      fbInit; // flag for initialization status
     Bool_t      fbDebug; // flag for debugging : if kTRUE Debug() messages are displayed
@@ -299,6 +301,7 @@ ProcessUniFlow::ProcessUniFlow() :
   fsOutputFileMode = TString("RECREATE");
   fsTaskName = TString("UniFlow");
   fsOutputFileFormat = TString("pdf");
+  fsGlobalProfNameLabel = TString("");
   fvTasks = std::vector<FlowTask*>();
 
   for(Short_t i(0); i < fiNumMultBinsGlobal; i++) fdMultBins[i] = 0;
@@ -549,7 +552,7 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
 
   for(Short_t i(0); i < task->fNumSamples; i++)
   {
-    prof = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_<2>_harm%d_gap%02.2g_sample%d",task->fHarmonics,10*task->fEtaGap,i));
+    prof = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<2>_harm%d_gap%02.2g_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,i));
     if(!prof) { Warning(Form("Profile sample %d does not exits. Skipping",i),"ProcesRefs"); continue; }
 
 
@@ -714,8 +717,8 @@ Bool_t ProcessUniFlow::ProcessDirect(FlowTask* task, Short_t iMultBin)
     if(task->fMergePosNeg)
     {
       // loading Pos & Neg if fMergePosNeg is ON
-      prof2pos = (TProfile2D*) listInput->FindObject(Form("fp2%s_<2>_harm%d_gap%02.2g_Pos_sample%d",task->GetSpeciesName().Data(),task->fHarmonics,10*task->fEtaGap,iSample));
-      prof2neg = (TProfile2D*) listInput->FindObject(Form("fp2%s_<2>_harm%d_gap%02.2g_Neg_sample%d",task->GetSpeciesName().Data(),task->fHarmonics,10*task->fEtaGap,iSample));
+      prof2pos = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<2>_harm%d_gap%02.2g_Pos_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,iSample));
+      prof2neg = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<2>_harm%d_gap%02.2g_Neg_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,iSample));
 
       if(!prof2pos || !prof2neg) { Error("Pos OR Neg profile not found for Pos&Neg merging.","ProcessDirect"); return kFALSE; }
       listMerge->Clear();
@@ -731,14 +734,14 @@ Bool_t ProcessUniFlow::ProcessDirect(FlowTask* task, Short_t iMultBin)
     {
       // loading single profile
       if(task->fInputTag.EqualTo(""))
-      { prof2 = (TProfile2D*) listInput->FindObject(Form("fp2%s_<2>_harm%d_gap%02.2g_Pos_sample%d",task->GetSpeciesName().Data(),task->fHarmonics,10*task->fEtaGap,iSample)); }
+      { prof2 = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<2>_harm%d_gap%02.2g_Pos_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,iSample)); }
       else
-      { prof2 = (TProfile2D*) listInput->FindObject(Form("fp2%s_<2>_harm%d_gap%02.2g_%s_sample%d",task->GetSpeciesName().Data(),task->fHarmonics,10*task->fEtaGap,task->fInputTag.Data(),iSample)); }
+      { prof2 = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<2>_harm%d_gap%02.2g_%s_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,task->fInputTag.Data(),iSample)); }
     }
     if(!prof2) { Error(Form("Profile sample %d does not exists.",iSample),"ProcessDirect"); return kFALSE; }
 
     // preparing Refs
-    profRef = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_<2>_harm%d_gap%02.2g_sample%d",task->fHarmonics,10*task->fEtaGap,iSample));
+    profRef = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<2>_harm%d_gap%02.2g_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,iSample));
     if(!profRef) { Error(Form("Profile sample %d does not exists",iSample),"ProcesPID"); return kFALSE; }
 
     profRefRebin = (TProfile*) profRef->Rebin(fiNumMultBins,Form("%s_rebin",profRef->GetName()),fdMultBins);
@@ -830,8 +833,8 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
       {
         // loading Pos & Neg if fMergePosNeg is ON
         // merging profiles
-        profFlowPos = (TProfile3D*) flFlowPhi->FindObject(Form("fp3PhiCorr_<2>_harm%d_gap%02.2g_Pos",task->fHarmonics,10*task->fEtaGap));
-        profFlowNeg = (TProfile3D*) flFlowPhi->FindObject(Form("fp3PhiCorr_<2>_harm%d_gap%02.2g_Neg",task->fHarmonics,10*task->fEtaGap));
+        profFlowPos = (TProfile3D*) flFlowPhi->FindObject(Form("fp3PhiCorr_%s<2>_harm%d_gap%02.2g_Pos",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap));
+        profFlowNeg = (TProfile3D*) flFlowPhi->FindObject(Form("fp3PhiCorr_%s<2>_harm%d_gap%02.2g_Neg",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap));
 
         if(!profFlowPos || !profFlowNeg) { Error("Pos OR Neg profile not found for Pos&Neg merging.","ProcessDirect"); return kFALSE; }
         listMerge = new TList();
@@ -845,8 +848,8 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
         delete listMerge;
 
         // merging histos
-        histEntriesPos = (TH3D*) flFlowPhi->FindObject(Form("fh3PhiEntriesSignal_gap%02.2g_Pos",10*task->fEtaGap));
-        histEntriesNeg = (TH3D*) flFlowPhi->FindObject(Form("fh3PhiEntriesSignal_gap%02.2g_Neg",10*task->fEtaGap));
+        histEntriesPos = (TH3D*) flFlowPhi->FindObject(Form("fh3PhiEntriesSignal_%sgap%02.2g_Pos",fsGlobalProfNameLabel.Data(),10*task->fEtaGap));
+        histEntriesNeg = (TH3D*) flFlowPhi->FindObject(Form("fh3PhiEntriesSignal_%sgap%02.2g_Neg",fsGlobalProfNameLabel.Data(),10*task->fEtaGap));
         if(!histEntriesPos || !histEntriesNeg) { Error("Pos OR Neg histo not found for Pos&Neg merging.","ProcessReconstructed"); return kFALSE; }
 
         listMerge = new TList();
@@ -878,15 +881,15 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
         // loading single profile
         if(task->fInputTag.EqualTo(""))
         {
-          histEntries = (TH3D*) flFlowPhi->FindObject(Form("fh3PhiEntriesSignal_gap%02.2g_Pos",10*task->fEtaGap));
+          histEntries = (TH3D*) flFlowPhi->FindObject(Form("fh3PhiEntriesSignal_%sgap%02.2g_Pos",fsGlobalProfNameLabel.Data(),10*task->fEtaGap));
           histBG = (TH3D*) flFlowPhi->FindObject(Form("fh3PhiEntriesBG_gap%02.2g_Pos",10*task->fEtaGap));
-          profFlow = (TProfile3D*) flFlowPhi->FindObject(Form("fp3PhiCorr_<2>_harm%d_gap%02.2g_Pos",task->fHarmonics,10*task->fEtaGap));
+          profFlow = (TProfile3D*) flFlowPhi->FindObject(Form("fp3PhiCorr_<2>_%sharm%d_gap%02.2g_Pos",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap));
         }
         else
         {
-          histEntries = (TH3D*) flFlowPhi->FindObject(Form("fh3PhiEntriesSignal_gap%02.2g_%s",10*task->fEtaGap,task->fInputTag.Data()));
+          histEntries = (TH3D*) flFlowPhi->FindObject(Form("fh3PhiEntriesSignal_%sgap%02.2g_%s",fsGlobalProfNameLabel.Data(),10*task->fEtaGap,task->fInputTag.Data()));
           histBG = (TH3D*) flFlowPhi->FindObject(Form("fh3PhiEntriesBG_gap%02.2g_%s",10*task->fEtaGap,task->fInputTag.Data()));
-          profFlow = (TProfile3D*) flFlowPhi->FindObject(Form("fp3PhiCorr_<2>_harm%d_gap%02.2g_%s",task->fHarmonics,10*task->fEtaGap,task->fInputTag.Data()));
+          profFlow = (TProfile3D*) flFlowPhi->FindObject(Form("fp3PhiCorr_%s<2>_harm%d_gap%02.2g_%s",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,task->fInputTag.Data()));
         }
       }
     break;
@@ -899,8 +902,8 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
       {
         // loading Pos & Neg if fMergePosNeg is ON
         // merging TProfiles
-        profFlowPos = (TProfile3D*) flFlowK0s->FindObject(Form("fp3V0sCorrK0s_<2>_harm%d_gap%02.2g_Pos",task->fHarmonics,10*task->fEtaGap));
-        profFlowNeg = (TProfile3D*) flFlowK0s->FindObject(Form("fp3V0sCorrK0s_<2>_harm%d_gap%02.2g_Neg",task->fHarmonics,10*task->fEtaGap));
+        profFlowPos = (TProfile3D*) flFlowK0s->FindObject(Form("fp3V0sCorrK0s_%s<2>_harm%d_gap%02.2g_Pos",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap));
+        profFlowNeg = (TProfile3D*) flFlowK0s->FindObject(Form("fp3V0sCorrK0s_%s<2>_harm%d_gap%02.2g_Neg",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap));
         if(!profFlowPos || !profFlowNeg) { Error("Pos OR Neg profile not found for Pos&Neg merging.","ProcessReconstructed"); return kFALSE; }
 
         listMerge = new TList();
@@ -914,8 +917,8 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
         delete listMerge;
 
         // merging histos
-        histEntriesPos = (TH3D*) flFlowK0s->FindObject(Form("fh3V0sEntriesK0s_gap%02.2g_Pos",10*task->fEtaGap));
-        histEntriesNeg = (TH3D*) flFlowK0s->FindObject(Form("fh3V0sEntriesK0s_gap%02.2g_Neg",10*task->fEtaGap));
+        histEntriesPos = (TH3D*) flFlowK0s->FindObject(Form("fh3V0sEntriesK0s_%sgap%02.2g_Pos",fsGlobalProfNameLabel.Data(),10*task->fEtaGap));
+        histEntriesNeg = (TH3D*) flFlowK0s->FindObject(Form("fh3V0sEntriesK0s_%sgap%02.2g_Neg",fsGlobalProfNameLabel.Data(),10*task->fEtaGap));
         if(!histEntriesPos || !histEntriesNeg) { Error("Pos OR Neg histo not found for Pos&Neg merging.","ProcessReconstructed"); return kFALSE; }
 
         listMerge = new TList();
@@ -933,13 +936,13 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
         // loading single profile
         if(task->fInputTag.EqualTo(""))
         {
-          histEntries = (TH3D*) flFlowK0s->FindObject(Form("fh3V0sEntriesK0s_gap%02.2g_Pos",10*task->fEtaGap));
-          profFlow = (TProfile3D*) flFlowK0s->FindObject(Form("fp3V0sCorrK0s_<2>_harm%d_gap%02.2g_Pos",task->fHarmonics,10*task->fEtaGap));
+          histEntries = (TH3D*) flFlowK0s->FindObject(Form("fh3V0sEntriesK0s_%sgap%02.2g_Pos",fsGlobalProfNameLabel.Data(),10*task->fEtaGap));
+          profFlow = (TProfile3D*) flFlowK0s->FindObject(Form("fp3V0sCorrK0s_%s<2>_harm%d_gap%02.2g_Pos",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap));
         }
         else
         {
-          histEntries = (TH3D*) flFlowK0s->FindObject(Form("fh3V0sEntriesK0s_gap%02.2g_%s",10*task->fEtaGap,task->fInputTag.Data()));
-          profFlow = (TProfile3D*) flFlowK0s->FindObject(Form("fp3V0sCorrK0s_<2>_harm%d_gap%02.2g_%s",task->fHarmonics,10*task->fEtaGap,task->fInputTag.Data()));
+          histEntries = (TH3D*) flFlowK0s->FindObject(Form("fh3V0sEntriesK0s_%sgap%02.2g_%s",fsGlobalProfNameLabel.Data(),10*task->fEtaGap,task->fInputTag.Data()));
+          profFlow = (TProfile3D*) flFlowK0s->FindObject(Form("fp3V0sCorrK0s_%s<2>_harm%d_gap%02.2g_%s",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,task->fInputTag.Data()));
         }
       }
     break;
@@ -952,8 +955,8 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
       {
         // loading Pos & Neg if fMergePosNeg is ON
         // merging profiles
-        profFlowPos = (TProfile3D*) flFlowLambda->FindObject(Form("fp3V0sCorrLambda_<2>_harm%d_gap%02.2g_Pos",task->fHarmonics,10*task->fEtaGap));
-        profFlowNeg = (TProfile3D*) flFlowLambda->FindObject(Form("fp3V0sCorrLambda_<2>_harm%d_gap%02.2g_Neg",task->fHarmonics,10*task->fEtaGap));
+        profFlowPos = (TProfile3D*) flFlowLambda->FindObject(Form("fp3V0sCorrLambda_%s<2>_harm%d_gap%02.2g_Pos",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap));
+        profFlowNeg = (TProfile3D*) flFlowLambda->FindObject(Form("fp3V0sCorrLambda_%s<2>_harm%d_gap%02.2g_Neg",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap));
 
         if(!profFlowPos || !profFlowNeg) { Error("Pos OR Neg profile not found for Pos&Neg merging.","ProcessReconstructed"); return kFALSE; }
         listMerge = new TList();
@@ -967,8 +970,8 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
         delete listMerge;
 
         // merging histos
-        histEntriesPos = (TH3D*) flFlowLambda->FindObject(Form("fh3V0sEntriesLambda_gap%02.2g_Pos",10*task->fEtaGap));
-        histEntriesNeg = (TH3D*) flFlowLambda->FindObject(Form("fh3V0sEntriesLambda_gap%02.2g_Neg",10*task->fEtaGap));
+        histEntriesPos = (TH3D*) flFlowLambda->FindObject(Form("fh3V0sEntriesLambda_%sgap%02.2g_Pos",fsGlobalProfNameLabel.Data(),10*task->fEtaGap));
+        histEntriesNeg = (TH3D*) flFlowLambda->FindObject(Form("fh3V0sEntriesLambda_%sgap%02.2g_Neg",fsGlobalProfNameLabel.Data(),10*task->fEtaGap));
         if(!histEntriesPos || !histEntriesNeg) { Error("Pos OR Neg histo not found for Pos&Neg merging.","ProcessReconstructed"); return kFALSE; }
 
         listMerge = new TList();
@@ -986,13 +989,13 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
         // loading single profile
         if(task->fInputTag.EqualTo(""))
         {
-          histEntries = (TH3D*) flFlowLambda->FindObject(Form("fh3V0sEntriesLambda_gap%02.2g_Pos",10*task->fEtaGap));
-          profFlow = (TProfile3D*) flFlowLambda->FindObject(Form("fp3V0sCorrLambda_<2>_harm%d_gap%02.2g_Pos",task->fHarmonics,10*task->fEtaGap));
+          histEntries = (TH3D*) flFlowLambda->FindObject(Form("fh3V0sEntriesLambda_%sgap%02.2g_Pos",fsGlobalProfNameLabel.Data(),10*task->fEtaGap));
+          profFlow = (TProfile3D*) flFlowLambda->FindObject(Form("fp3V0sCorrLambda_%s<2>_harm%d_gap%02.2g_Pos",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap));
         }
         else
         {
-          histEntries = (TH3D*) flFlowLambda->FindObject(Form("fh3V0sEntriesLambda_gap%02.2g_%s",10*task->fEtaGap,task->fInputTag.Data()));
-          profFlow = (TProfile3D*) flFlowLambda->FindObject(Form("fp3V0sCorrLambda_<2>_harm%d_gap%02.2g_%s",task->fHarmonics,10*task->fEtaGap,task->fInputTag.Data()));
+          histEntries = (TH3D*) flFlowLambda->FindObject(Form("fh3V0sEntriesLambda_%sgap%02.2g_%s",fsGlobalProfNameLabel.Data(),10*task->fEtaGap,task->fInputTag.Data()));
+          profFlow = (TProfile3D*) flFlowLambda->FindObject(Form("fp3V0sCorrLambda_%s<2>_harm%d_gap%02.2g_%s",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,task->fInputTag.Data()));
         }
       }
     break;
