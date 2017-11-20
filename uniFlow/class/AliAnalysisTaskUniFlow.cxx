@@ -660,6 +660,13 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow(const char* name) : AliAnalysisTa
         fh3V0sEntriesLambdaNeg_multScaled[iGap] = 0x0;
         fh3PhiEntriesSignalPos_multScaled[iGap] = 0x0;
         fh3PhiEntriesSignalNeg_multScaled[iGap] = 0x0;
+
+        fh3V0sEntriesK0sPos_multScaled_weighted[iGap] = 0x0;
+        fh3V0sEntriesK0sNeg_multScaled_weighted[iGap] = 0x0;
+        fh3V0sEntriesLambdaPos_multScaled_weighted[iGap] = 0x0;
+        fh3V0sEntriesLambdaNeg_multScaled_weighted[iGap] = 0x0;
+        fh3PhiEntriesSignalPos_multScaled_weighted[iGap] = 0x0;
+        fh3PhiEntriesSignalNeg_multScaled_weighted[iGap] = 0x0;
       }
 
       // mean Qx,Qy
@@ -689,6 +696,16 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow(const char* name) : AliAnalysisTa
         fp2KaonCor2Neg_multScaled[iSample][iGap][iHarm] = 0x0;
         fp2ProtonCor2Pos_multScaled[iSample][iGap][iHarm] = 0x0;
         fp2ProtonCor2Pos_multScaled[iSample][iGap][iHarm] = 0x0;
+
+        fpRefsCor2_multScaled_weighted[iSample][iGap][iHarm] = 0x0;
+        fp2ChargedCor2Pos_multScaled_weighted[iSample][iGap][iHarm] = 0x0;
+        fp2ChargedCor2Neg_multScaled_weighted[iSample][iGap][iHarm] = 0x0;
+        fp2PionCor2Pos_multScaled_weighted[iSample][iGap][iHarm] = 0x0;
+        fp2PionCor2Neg_multScaled_weighted[iSample][iGap][iHarm] = 0x0;
+        fp2KaonCor2Pos_multScaled_weighted[iSample][iGap][iHarm] = 0x0;
+        fp2KaonCor2Neg_multScaled_weighted[iSample][iGap][iHarm] = 0x0;
+        fp2ProtonCor2Pos_multScaled_weighted[iSample][iGap][iHarm] = 0x0;
+        fp2ProtonCor2Pos_multScaled_weighted[iSample][iGap][iHarm] = 0x0;
       }
 
       fp3V0sCorrK0sCor2Pos[iGap][iHarm] = 0x0;
@@ -704,6 +721,13 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow(const char* name) : AliAnalysisTa
       fp3V0sCorrLambdaCor2Neg_multScaled[iGap][iHarm] = 0x0;
       fp3PhiCorrCor2Pos_multScaled[iGap][iHarm] = 0x0;
       fp3PhiCorrCor2Neg_multScaled[iGap][iHarm] = 0x0;
+
+      fp3V0sCorrK0sCor2Pos_multScaled_weighted[iGap][iHarm] = 0x0;
+      fp3V0sCorrK0sCor2Neg_multScaled_weighted[iGap][iHarm] = 0x0;
+      fp3V0sCorrLambdaCor2Pos_multScaled_weighted[iGap][iHarm] = 0x0;
+      fp3V0sCorrLambdaCor2Neg_multScaled_weighted[iGap][iHarm] = 0x0;
+      fp3PhiCorrCor2Pos_multScaled_weighted[iGap][iHarm] = 0x0;
+      fp3PhiCorrCor2Neg_multScaled_weighted[iGap][iHarm] = 0x0;
     }
   }
 
