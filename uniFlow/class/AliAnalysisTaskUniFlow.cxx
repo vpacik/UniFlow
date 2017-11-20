@@ -3568,7 +3568,7 @@ AliAnalysisTaskUniFlow::PartSpecies AliAnalysisTaskUniFlow::IsPIDSelected(const 
     }
 
     // combined TPC + TOF nSigma cuts
-    if(dPt > 0.4 && dPt < 4.0)
+    if(dPt > 0.4)
     {
       Float_t dNumSigmaCombined[5] = {-99.,-99.,-99.,-99.,-99.};
 
