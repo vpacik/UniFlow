@@ -4291,7 +4291,7 @@ void AliAnalysisTaskUniFlow::DoFlowPhi(const Short_t iEtaGapIndex, const Short_t
           if(TMath::Abs(dValue < 1))
           {
             prof->Fill(fIndexCentrality, dPt, dMass, dValue, Dn2);
-            prof_multScaled>Fill(fIndexCentrality, dPt, dMass, dValue);
+            prof_multScaled->Fill(fIndexCentrality, dPt, dMass, dValue);
           }
         }
       }
@@ -4872,6 +4872,8 @@ void AliAnalysisTaskUniFlow::FillPOIsVectors(const Short_t iEtaGapIndex, const P
   std::vector<AliVTrack*>* vector = 0x0;
   TH3D* histPos = 0x0;
   TH3D* histNeg = 0x0;
+  TH3D* histPos_multScaled = 0x0;
+  TH3D* histNeg_multScaled = 0x0;
   TH2D* h2Weights = 0x0;
 
   // swich based on species
@@ -4901,7 +4903,9 @@ void AliAnalysisTaskUniFlow::FillPOIsVectors(const Short_t iEtaGapIndex, const P
       vector = fVectorK0s;
       h2Weights = fh2WeightK0s;
       histPos = fh3V0sEntriesK0sPos[iEtaGapIndex];
+      histPos_multScaled = fh3V0sEntriesK0sPos_multScaled[iEtaGapIndex];
       if(bHasGap) histNeg = fh3V0sEntriesK0sNeg[iEtaGapIndex];
+      if(bHasGap) histNeg_multScaled = fh3V0sEntriesK0sNeg_multScaled[iEtaGapIndex];
       bHasMass = kTRUE;
       break;
 
@@ -4909,14 +4913,18 @@ void AliAnalysisTaskUniFlow::FillPOIsVectors(const Short_t iEtaGapIndex, const P
       vector = fVectorLambda;
       h2Weights = fh2WeightLambda;
       histPos = fh3V0sEntriesLambdaPos[iEtaGapIndex];
+      histPos_multScaled = fh3V0sEntriesLambdaPos_multScaled[iEtaGapIndex];
       if(bHasGap) histNeg = fh3V0sEntriesLambdaNeg[iEtaGapIndex];
+      if(bHasGap) histNeg_multScaled = fh3V0sEntriesLambdaNeg_multScaled[iEtaGapIndex];
       bHasMass = kTRUE;
       break;
 
     case kPhi:
       vector = fVectorPhi;
       histPos = fh3PhiEntriesSignalPos[iEtaGapIndex];
+      histPos_multScaled = fh3PhiEntriesSignalPos_multScaled[iEtaGapIndex];
       if(bHasGap) histNeg = fh3PhiEntriesSignalNeg[iEtaGapIndex];
+      if(bHasGap) histNeg_multScaled = fh3PhiEntriesSignalNeg_multScaled[iEtaGapIndex];
       h2Weights = fh2WeightPhi;
       bHasMass = kTRUE;
       break;
@@ -4928,7 +4936,9 @@ void AliAnalysisTaskUniFlow::FillPOIsVectors(const Short_t iEtaGapIndex, const P
 
   if(fFlowUseWeights && !h2Weights) { AliError("Histogtram with weights not found."); return; }
   if(bHasMass && !histPos) { AliError("Historgram for POIs in positive eta not found."); return; }
+  if(bHasMass && !histPos_multScaled) { AliError("Historgram for POIs in positive eta (multScaled) not found."); return; }
   if(bHasMass && bHasGap && !histNeg) { AliError("Historgram for POIs in negative eta not found."); return; }
+  if(bHasMass && bHasGap && !histNeg_multScaled) { AliError("Historgram for POIs in negative eta (multSacled) not found."); return; }
 
   Double_t dMassLow = 0.0;
   Double_t dMassHigh = 0.0;
@@ -4966,7 +4976,7 @@ void AliAnalysisTaskUniFlow::FillPOIsVectors(const Short_t iEtaGapIndex, const P
 
     if(!bHasGap) // no eta gap
     {
-      if(bHasMass) { histPos->Fill(fIndexCentrality,dPt,dMass,1); }
+      if(bHasMass) { histPos->Fill(fIndexCentrality,dPt,dMass,1); histPos_multScaled->Fill(fIndexCentrality,dPt,dMass,1); }
 
       for(Short_t iHarm(0); iHarm < fFlowNumHarmonicsMax; iHarm++)
         for(Short_t iPower(0); iPower < fFlowNumWeightPowersMax; iPower++)
@@ -4990,7 +5000,7 @@ void AliAnalysisTaskUniFlow::FillPOIsVectors(const Short_t iEtaGapIndex, const P
     {
       if(dEta > dEtaLimit) // particle in positive eta acceptance
       {
-        if(bHasMass) { histPos->Fill(fIndexCentrality,dPt,dMass,1); }
+        if(bHasMass) { histPos->Fill(fIndexCentrality,dPt,dMass,1);  histPos_multScaled->Fill(fIndexCentrality,dPt,dMass,1); }
 
         for(Short_t iHarm(0); iHarm < fFlowNumHarmonicsMax; iHarm++)
           for(Short_t iPower(0); iPower < fFlowNumWeightPowersMax; iPower++)
@@ -5002,7 +5012,7 @@ void AliAnalysisTaskUniFlow::FillPOIsVectors(const Short_t iEtaGapIndex, const P
        }
        if(dEta < -dEtaLimit) // particle in negative eta acceptance
        {
-         if(bHasMass) { histNeg->Fill(fIndexCentrality,dPt,dMass,1); }
+         if(bHasMass) { histNeg->Fill(fIndexCentrality,dPt,dMass,1); histNeg_multScaled->Fill(fIndexCentrality,dPt,dMass,1); }
 
          for(Short_t iHarm(0); iHarm < fFlowNumHarmonicsMax; iHarm++)
            for(Short_t iPower(0); iPower < fFlowNumWeightPowersMax; iPower++)
