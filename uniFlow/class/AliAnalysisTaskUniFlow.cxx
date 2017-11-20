@@ -1254,9 +1254,9 @@ void AliAnalysisTaskUniFlow::UserCreateOutputObjects()
                 fp2PionCor2Neg_multScaled_weighted[iSample][iGap][iHarm]->Sumw2(kTRUE);
                 fFlowPID->Add(fp2PionCor2Neg_multScaled_weighted[iSample][iGap][iHarm]);
 
-                fp2KaonCor2Neg_multScaled[iSample][iGap][iHarm] = new TProfile2D(Form("fp2Kaon_multScaled_weighted_<2>_harm%d_gap%02.2g_Neg_sample%d",fHarmonics[iHarm],10*fEtaGap[iGap],iSample),Form("PID K: <<2'>> | Gap %g | n=%d | sample %d | POIs neg; centrality/multiplicity; #it{p}_{T} (GeV/c)",fEtaGap[iGap],fHarmonics[iHarm],iSample), fFlowCentNumBins,fFlowCentMin,fFlowCentMax, fFlowPOIsPtNumBins,fFlowPOIsPtMin,fFlowPOIsPtMax);
-                fp2KaonCor2Neg_multScaled[iSample][iGap][iHarm]->Sumw2(kTRUE);
-                fFlowPID->Add(fp2KaonCor2Neg_multScaled[iSample][iGap][iHarm]);
+                fp2KaonCor2Neg_multScaled_weighted[iSample][iGap][iHarm] = new TProfile2D(Form("fp2Kaon_multScaled_weighted_<2>_harm%d_gap%02.2g_Neg_sample%d",fHarmonics[iHarm],10*fEtaGap[iGap],iSample),Form("PID K: <<2'>> | Gap %g | n=%d | sample %d | POIs neg; centrality/multiplicity; #it{p}_{T} (GeV/c)",fEtaGap[iGap],fHarmonics[iHarm],iSample), fFlowCentNumBins,fFlowCentMin,fFlowCentMax, fFlowPOIsPtNumBins,fFlowPOIsPtMin,fFlowPOIsPtMax);
+                fp2KaonCor2Neg_multScaled_weighted[iSample][iGap][iHarm]->Sumw2(kTRUE);
+                fFlowPID->Add(fp2KaonCor2Neg_multScaled_weighted[iSample][iGap][iHarm]);
 
                 fp2ProtonCor2Neg_multScaled_weighted[iSample][iGap][iHarm] = new TProfile2D(Form("fp2Proton_multScaled_weighted_<2>_harm%d_gap%02.2g_Neg_sample%d",fHarmonics[iHarm],10*fEtaGap[iGap],iSample),Form("PID p: <<2'>> | Gap %g | n=%d | sample %d | POIs neg; centrality/multiplicity; #it{p}_{T} (GeV/c)",fEtaGap[iGap],fHarmonics[iHarm],iSample), fFlowCentNumBins,fFlowCentMin,fFlowCentMax, fFlowPOIsPtNumBins,fFlowPOIsPtMin,fFlowPOIsPtMax);
                 fp2ProtonCor2Neg_multScaled_weighted[iSample][iGap][iHarm]->Sumw2(kTRUE);
