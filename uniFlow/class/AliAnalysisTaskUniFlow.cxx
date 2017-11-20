@@ -3932,7 +3932,10 @@ void AliAnalysisTaskUniFlow::DoFlowRefs(const Short_t iEtaGapIndex)
         dValue = vector.Re()/Cn2;
         // printf("Gap (RFPs): %g Harm %d | Dn2: %g | fFlowVecQpos[0][0]: %g | fFlowVecQneg[0][0]: %g | fIndexCentrality %d\n\n", dEtaGap,iHarmonics,Cn2,fFlowVecQpos[0][0].Re(),fFlowVecQneg[0][0].Re(),fIndexCentrality);
         if( TMath::Abs(dValue < 1) )
+        {
           fpRefsCor2[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, dValue, Cn2);
+          fpRefsCor2_multScaled[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, dValue);
+        }
       }
     }
 
@@ -3967,7 +3970,10 @@ void AliAnalysisTaskUniFlow::DoFlowRefs(const Short_t iEtaGapIndex)
         dValue = vector.Re()/Cn2;
         // printf("Gap (RFPs): %g Harm %d | Dn2: %g | fFlowVecQpos[0][0]: %g | fFlowVecQneg[0][0]: %g | fIndexCentrality %d\n\n", dEtaGap,iHarmonics,Cn2,fFlowVecQpos[0][0].Re(),fFlowVecQneg[0][0].Re(),fIndexCentrality);
         if( TMath::Abs(dValue < 1) )
+        {
           fpRefsCor2[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, dValue, Cn2);
+          fpRefsCor2_multScaled[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, dValue);
+        }
 
       }
     }
@@ -4006,7 +4012,10 @@ void AliAnalysisTaskUniFlow::DoFlowCharged(const Short_t iEtaGapIndex)
           dValue = vector.Re()/Dn2;
           // printf("Gap (no): %g Harm %d Pt %g | Dn2: %g | fFlowVecQpos[0][0]: %g | fFlowVecQneg[0][0]: %g | fFlowVecPpos[0][0]: %g | fFlowVecPneg[0][0]: %g | fFlowVecS[0][0]: %g | fIndexCentrality %d\n\n", dEtaGap,iHarmonics,dPt, Dn2,fFlowVecQpos[0][0].Re(),fFlowVecQneg[0][0].Re(),fFlowVecPpos[0][0].Re(),fFlowVecPneg[0][0].Re(),fFlowVecS[0][0].Re(),fIndexCentrality);
           if(TMath::Abs(dValue < 1))
+          {
             fp2ChargedCor2Pos[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, iPt*dPtBinWidth, dValue, Dn2);
+            fp2ChargedCor2Pos_multScaled[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, iPt*dPtBinWidth, dValue);
+          }
         }
       }
 
@@ -4042,7 +4051,10 @@ void AliAnalysisTaskUniFlow::DoFlowCharged(const Short_t iEtaGapIndex)
           dValue = vector.Re()/Dn2;
           // printf("Gap (Pos): %g Harm %d Pt %g | Dn2: %g | fFlowVecQpos[0][0]: %g | fFlowVecQneg[0][0]: %g | fFlowVecPpos[0][0]: %g | fFlowVecPneg[0][0]: %g | fFlowVecS[0][0]: %g | fIndexCentrality %d\n\n", dEtaGap,iHarmonics,dPt,Dn2,fFlowVecQpos[0][0].Re(),fFlowVecQneg[0][0].Re(),fFlowVecPpos[0][0].Re(),fFlowVecPneg[0][0].Re(),fFlowVecS[0][0].Re(),fIndexCentrality);
           if( TMath::Abs(dValue < 1) )
+          {
             fp2ChargedCor2Pos[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, iPt*dPtBinWidth, dValue, Dn2);
+            fp2ChargedCor2Pos_multScaled[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, iPt*dPtBinWidth, dValue);
+          }
         }
       }
 
@@ -4057,7 +4069,10 @@ void AliAnalysisTaskUniFlow::DoFlowCharged(const Short_t iEtaGapIndex)
           dValue = vector.Re()/Dn2;
           // printf("Gap (Neg): %g Harm %d Pt %g | Dn2: %g | fFlowVecQpos[0][0]: %g | fFlowVecQneg[0][0]: %g | fFlowVecPpos[0][0]: %g | fFlowVecPneg[0][0]: %g | fFlowVecS[0][0]: %g | fIndexCentrality %d\n\n", dEtaGap,iHarmonics,dPt,Dn2,fFlowVecQpos[0][0].Re(),fFlowVecQneg[0][0].Re(),fFlowVecPpos[0][0].Re(),fFlowVecPneg[0][0].Re(),fFlowVecS[0][0].Re(),fIndexCentrality);
           if( TMath::Abs(dValue < 1) )
+          {
             fp2ChargedCor2Neg[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, iPt*dPtBinWidth, dValue, Dn2);
+            fp2ChargedCor2Neg_multScaled[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, iPt*dPtBinWidth, dValue);
+          }
         }
       }
     } // endif {dEtaGap}
