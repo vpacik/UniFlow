@@ -212,6 +212,7 @@ class ProcessUniFlow
     void        SetOutputFileMode(const char* mode = "RECREATE") { fsOutputFileMode = mode; }
     void        SetTaskName(const char* name) { fsTaskName = name; }
     void        SetGlobalProfNameLabel(const char* label = "") { fsGlobalProfNameLabel = label; } // add global profile label for all tasks NOTE: for the purpose of Flow sub
+    void        SetSaveMult(const char* file) { fbSaveMult = kTRUE; fsMultFile = TString(file); } // save reference multiplicity
     void        SetMultiplicityBins(Double_t* array, const Short_t size); // setup the global multiplicity binning, where size is number of elements in array
     void        SetDebug(Bool_t debug = kTRUE) { fbDebug = debug; }
     void        AddTask(FlowTask* task = 0x0); // add task to internal lists of all tasks
@@ -265,6 +266,8 @@ class ProcessUniFlow
     TString     fsTaskName; // name of task (inchluded in data structure names)
     TString     fsOutputFileFormat; // [pdf] format of output files (pictures)
     TString     fsGlobalProfNameLabel; // global profile label for all task
+    TString     fsMultFile; // [""]
+    Bool_t      fbSaveMult; // [kFALSE]
 
     Bool_t      fbInit; // flag for initialization status
     Bool_t      fbDebug; // flag for debugging : if kTRUE Debug() messages are displayed
@@ -283,6 +286,7 @@ class ProcessUniFlow
 ProcessUniFlow::ProcessUniFlow() :
   fbDebug(kFALSE),
   fbInit(kFALSE),
+  fbSaveMult(kFALSE),
   ffInputFile(0x0),
   ffOutputFile(0x0),
   flFlowRefs(0x0),
@@ -299,6 +303,7 @@ ProcessUniFlow::ProcessUniFlow() :
   fsOutputFilePath = TString("");
   fsOutputFileName = TString("UniFlow.root");
   fsOutputFileMode = TString("RECREATE");
+  fsMultFile = TString("");
   fsTaskName = TString("UniFlow");
   fsOutputFileFormat = TString("pdf");
   fsGlobalProfNameLabel = TString("");
@@ -550,10 +555,27 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
   TList* list = new TList();
   TList* listMerge = new TList();
 
+  // rebinning <multiplicity>
+  if(fbSaveMult)
+  {
+    TProfile* profMult = (TProfile*) flFlowRefs->FindObject(Form("fpRefsMult"));
+    if(!profMult) { Error("MeanMult profile not found!"); flFlowRefs->ls(); return kFALSE; }
+    TProfile* profMult_rebin = (TProfile*) profMult->Rebin(fiNumMultBins,Form("%s_rebin",profMult->GetName()),fdMultBins);
+
+    TFile* fileMult = TFile::Open(Form("%s/../../%s",fsOutputFilePath.Data(),fsMultFile.Data()),"RECREATE");
+    if(!fileMult) { Error("Output fileMult file not found!"); return kFALSE; }
+    fileMult->cd();
+    profMult_rebin->Write(profMult_rebin->GetName());
+
+    printf("saving to ... %s/%s\n",fsOutputFilePath.Data(),fsMultFile.Data());
+  }
+
+
   for(Short_t i(0); i < task->fNumSamples; i++)
   {
     prof = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<2>_harm%d_gap%02.2g_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,i));
     if(!prof) { Warning(Form("Profile sample %d does not exits. Skipping",i),"ProcesRefs"); continue; }
+
 
 
     if(task->fRebinning)
@@ -675,7 +697,7 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
 //_____________________________________________________________________________
 Bool_t ProcessUniFlow::ProcessDirect(FlowTask* task, Short_t iMultBin)
 {
-  Info("Processing PID task","ProcesPID");
+  Info("Processing direct task","ProcesDirect");
   if(!task) { Error("Task not valid!","ProcessDirect"); return kFALSE; }
 
   TList* listInput = 0x0;
@@ -692,7 +714,7 @@ Bool_t ProcessUniFlow::ProcessDirect(FlowTask* task, Short_t iMultBin)
       break;
 
     default:
-      Error("Task species not PID!","ProcessDirect");
+      Error("Task species not direct!","ProcessDirect");
       return kFALSE;
   }
 
@@ -1374,6 +1396,7 @@ Bool_t ProcessUniFlow::PrepareSlices(const Short_t multBin, FlowTask* task, TPro
     taskRef->SetHarmonics(task->fHarmonics);
     taskRef->SetEtaGap(task->fEtaGap);
     taskRef->SetNumSamples(task->fNumSamples);
+    taskRef->SetInputTag(task->fInputTag);
     if(ProcessRefs(taskRef))
     {
       hRefFlow = (TH1D*) ffOutputFile->Get(Form("hFlow2_Refs_harm%d_gap%02.2g",task->fHarmonics,10*task->fEtaGap));
@@ -3225,7 +3248,6 @@ Bool_t ProcessUniFlow::ExtractFlowLambda(FlowTask* task, TH1* hInvMass, TH1* hFl
   }
   hFlowMass->SetMinimum(-0.1);
   hFlowMass->SetMaximum(0.5);
-  printf("old flow: %g\n",dFlow);
 	hFlowMass->Fit("fitFlowTot","RIB");
 
 	dFlow = fitFlowTot->GetParameter(0);
