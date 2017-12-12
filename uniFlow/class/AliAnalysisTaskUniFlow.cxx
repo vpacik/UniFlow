@@ -3791,11 +3791,6 @@ Bool_t AliAnalysisTaskUniFlow::ProcessEvent()
   // Selection of relevant particles (pushing into corresponding vectors)
   Filtering();
 
-  // checking if there is at least two charged track selected (min requirement or <<2>>)
-  // if not, event is skipped: unable to compute Reference flow (and thus any differential flow)
-  if(fVectorCharged->size() < 2)
-    return kFALSE;
-
   // estimate centrality & assign indexes (centrality/percentile, sampling, ...)
   fIndexCentrality = GetCentralityIndex();
   if(fIndexCentrality < 0) return kFALSE;
@@ -3845,19 +3840,35 @@ Bool_t AliAnalysisTaskUniFlow::ProcessEvent()
         }
       }
 
-      DoFlowForSubtraction(iGap,kCharged);
-      DoFlowForSubtraction(iGap,kPion);
-      DoFlowForSubtraction(iGap,kKaon);
-      DoFlowForSubtraction(iGap,kProton);
-      DoFlowForSubtraction(iGap,kK0s);
-      DoFlowForSubtraction(iGap,kLambda);
-      DoFlowForSubtraction(iGap,kPhi);
+      if(fProcessCharged)
+      {
+        DoFlowForSubtraction(iGap,kCharged);
+      }
+      if(fProcessPID)
+      {
+        DoFlowForSubtraction(iGap,kPion);
+        DoFlowForSubtraction(iGap,kKaon);
+        DoFlowForSubtraction(iGap,kProton);
+      }
+      if(fProcessV0s)
+      {
+        DoFlowForSubtraction(iGap,kK0s);
+        DoFlowForSubtraction(iGap,kLambda);
+      }
+      if(fProcessPhi)
+      {
+        DoFlowForSubtraction(iGap,kPhi);
+      }
     }
 
     fEventCounter++; // counter of processed events
     return kTRUE;
   }
 
+  // checking if there is at least two charged track selected (min requirement or <<2>>)
+  // if not, event is skipped: unable to compute Reference flow (and thus any differential flow)
+  if(fVectorCharged->size() < 2)
+    return kFALSE;
 
   // >>>> Flow a la General Framework <<<<
   for(Short_t iGap(0); iGap < fNumEtaGap; iGap++)
