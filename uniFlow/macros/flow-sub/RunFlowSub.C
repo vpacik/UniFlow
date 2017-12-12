@@ -9,7 +9,7 @@
 void RunFlowSub(const char* sOutputFilePath = "")
 {
 	// ##### Parameters setting ######
-	Double_t dEtaGap = 0.0;
+	Double_t dEtaGap = 0.;
 	// Double_t dMultBinning[] = {20,40};
 	Double_t dMultBinning[] = {0,20,40,60,100};
 	// Double_t dMultBinning[] = {0.,5.,10.,20.,40.,60.,100.};
@@ -17,9 +17,10 @@ void RunFlowSub(const char* sOutputFilePath = "")
 
 	// Double_t dPtBinningK0s[] = {3.,5.};
 	// Double_t dPtBinningK0s[] = {0.2,0.4,0.6,0.8,1.,1.2,1.4,1.6,1.8,2.,2.2,2.4,2.6,3.,3.5,4.,5.,6.,7.,8.,10.,20.};
-	Double_t dPtBinningK0s[] = {0.2,1.,2.,3.,4.,5.,7.,10.,20.};
+	// Double_t dPtBinningK0s[] = {0.2,1.,2.,3.,4.,5.,7.,10.,20.};
+	Double_t dPtBinningK0s[] = {0.2,0.5,1.,1.5,2.,2.5,3.,3.5,4.,5.,7.,10.,20.};
 	// Double_t dPtBinningK0s[] = {0.3,0.5,0.75,1.,1.25,1.5,2.,2.5,3.}; // Run1
-	const char* sInputPath = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run2-gap0";
+	const char* sInputPath = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gap00";
 
 	// ##### END Parameters setting ######
 
@@ -53,6 +54,18 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	// taskLambda->SetFittingRejectNumSigmas(3);
 	// taskLambda->SetAlternativeProfileName("fp3V0sCorrK0s_<2>_harm2_gap08_Neg");
 
+	FlowTask* taskPhi = new FlowTask(FlowTask::kPhi);
+	taskPhi->SetAlexFitting(kTRUE);
+	taskPhi->SetNumSamples(1);
+	taskPhi->SetHarmonics(2);
+	taskPhi->SetEtaGap(dEtaGap);
+	taskPhi->SetInvMassRebin(2);
+	taskPhi->SetFlowMassRebin(2);
+	taskPhi->SetPtBins(dPtBinningK0s,sizeof(dPtBinningK0s)/sizeof(dPtBinningK0s[0]));
+	taskPhi->SetMergePosNeg();
+	// taskPhi->SetFittingRange(0.45,0.55);
+	// taskPhi->SetFittingRejectNumSigmas(3);
+	// taskPhi->SetAlternativeProfileName("fp3V0sCorrK0s_<2>_harm2_gap08_Neg");
 
 
 	FlowTask* taskRefs = new FlowTask(FlowTask::kRefs);
@@ -103,7 +116,7 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process->SetInputFileName("AnalysisResults.root");
 	process->SetTaskName("UniFlow");
 	// process->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process->SetOutputFilePath(Form("%s/output",sInputPath));
+	process->SetOutputFilePath(Form("%s/output_weighted",sInputPath));
 	process->SetOutputFileName("Processed.root");
 	process->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
 	process->AddTask(taskRefs);
@@ -113,6 +126,7 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process->AddTask(taskProton);
 	process->AddTask(taskK0s);
 	process->AddTask(taskLambda);
+	process->AddTask(taskPhi);
 	process->Run();
 
 	ProcessUniFlow* process_noweight = new ProcessUniFlow();
@@ -131,6 +145,7 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_noweight->AddTask(taskProton);
 	process_noweight->AddTask(taskK0s);
 	process_noweight->AddTask(taskLambda);
+	process_noweight->AddTask(taskPhi);
 	process_noweight->Run();
 
 	ProcessUniFlow* process_sub = new ProcessUniFlow();
@@ -141,6 +156,7 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_sub->SetOutputFilePath(Form("%s/output_sub",sInputPath));
 	process_sub->SetOutputFileName("Processed.root");
 	process_sub->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
+	process_sub->SetSaveMult("Mult.root");
 	process_sub->AddTask(taskRefs);
 	process_sub->AddTask(taskCharged);
 	process_sub->AddTask(taskPion);
@@ -148,6 +164,7 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_sub->AddTask(taskProton);
 	process_sub->AddTask(taskK0s);
 	process_sub->AddTask(taskLambda);
+	process_sub->AddTask(taskPhi);
 	process_sub->Run();
 
 	ProcessUniFlow* process_sub_norm = new ProcessUniFlow();
@@ -166,6 +183,7 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_sub_norm->AddTask(taskProton);
 	process_sub_norm->AddTask(taskK0s);
 	process_sub_norm->AddTask(taskLambda);
+	process_sub_norm->AddTask(taskPhi);
 	process_sub_norm->Run();
 
 	ProcessUniFlow* process_sub_norm_weighted = new ProcessUniFlow();
@@ -184,6 +202,7 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_sub_norm_weighted->AddTask(taskProton);
 	process_sub_norm_weighted->AddTask(taskK0s);
 	process_sub_norm_weighted->AddTask(taskLambda);
+	process_sub_norm_weighted->AddTask(taskPhi);
 	process_sub_norm_weighted->Run();
 
 	return;
