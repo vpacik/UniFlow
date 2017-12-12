@@ -1,107 +1,147 @@
 // macro for comparing list of histogram
 
-Color_t gColors[] = { kRed, kGreen+2, kBlue, kMagenta+2 };
-Color_t gMarkerStyles[] = { kFullCircle, kOpenCircle, kOpenCircle };
+#include "TFile.h"
+#include "TH1.h"
+#include "TCanvas.h"
+#include "TLegend.h"
+#include "TString.h"
+#include "TMath.h"
+#include "TSystem.h"
 
-const char* gsOutputFolder = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-test/plots";
-const char* gsHistoNames = "hFlow2_Lambda_harm2_gap08_mult3";
+Color_t gColors[] = { kRed, kGreen+2, kBlue, kMagenta+2, kBlack};
+Color_t gMarkerStyles[] = { kFullCircle, kOpenCircle, kOpenSquare,kOpenSquare,kOpenSquare };
 
+// unsubtracted
 const char* gsFileList[] = {
-  "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-test/output_old/Processed.root",
-  "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-test/output_sub/Processed.root",
-  "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-test/output_sub_norm/Processed.root"
+  "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run2-gap0/output_multint_weighted/Processed.root",
+  "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run2-gap0/output_multint_noweight/Processed.root",
+  "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run2-gap0/output_multint_sub_norm/Processed.root",
+  "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run2-gap0/output_multint_sub_norm_weighted/Processed.root",
+  "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run2-gap0/output_multint_sub/Processed.root"
 };
+// const char* gsHistoNames = "hFlow2_Charged_harm2_gap00_cent3";
+const char* gsOutputFolder = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run2-gap0/plots/";
+Double_t gdMinimum = 0.;
+Double_t gdMaximum = 1.;
+
+// //subtracted
+// const char* gsFileList[] = {
+//   "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run2-gap0/output_weighted/Subtracted_Charged.root",
+//   "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run2-gap0/output_noweight/Subtracted_Charged.root",
+//   "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run2-gap0/output_sub/Subtracted_Charged.root",
+//   "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run2-gap0/output_sub_norm/Subtracted_Charged.root",
+//   "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run2-gap0/output_sub_norm_weighted/Subtracted_Charged.root"
+// };
+// const char* gsOutputFolder = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run2-gap0/plots_sub/";
+// const char* gsHistoNames = "hFlow2_Charged_harm2_gap00_cent3_subt";
+// Double_t gdMinimum = -0.15;
+// Double_t gdMaximum = 0.2;
+
 
 const char* gsLabels[] = {
-  "v2{2}",
-  "SP",
-  "SP norm"
+  "GF [A]",
+  "GF wo event weights [B]",
+  "SP [C]",
+  "SP w event weights [D]",
+  "SP wo M scaling [E]"
 };
 
 Int_t giNumFiles = sizeof(gsFileList)/sizeof(gsFileList[0]);
-
+Int_t iNumCent = 1;
 
 TH1D* DivideHistos(TH1D* nom, TH1D* denom, Bool_t bCor = kFALSE);
 
-void CompareRatio(const char* sHistoName = gsHistoNames, const char** sFileList = gsFileList, Int_t iNumFiles = giNumFiles)
+void CompareRatio(const char** sFileList = gsFileList, Int_t iNumFiles = giNumFiles)
 {
   printf("Num files: %d\n",iNumFiles);
 
-  TList* list = new TList();
-  list->SetOwner(kTRUE);
-
-
-  // finding maximum
-  Double_t dMinimum = 0.0;
-  Double_t dMaximum = 0.0;
-
-  for(Int_t i(0); i < iNumFiles; ++i)
+  for(Int_t iCent(0); iCent < iNumCent; ++iCent)
   {
-    printf("Loading form : %s\n",sFileList[i]);
+    const char* sHistoName = Form("hFlow2_Charged_harm2_gap00_cent%d",iCent);
+    TList* list = new TList();
+    list->SetOwner(kTRUE);
 
-    // loading from root file
-    TFile* file = TFile::Open(sFileList[i],"READ");
-    if(!file) { printf("ERROR : Cannot open file '%s'!\n",sFileList[i]); continue; }
+    // finding maximum
+    Double_t dMinimum = 0.0;
+    Double_t dMaximum = 0.0;
 
-    TH1D* hist = (TH1D*) file->Get(sHistoName);
-    if(!hist) { printf("ERROR : Cannot find histo '%s'!\n",sHistoName); file->ls(); continue; }
+    for(Int_t i(0); i < iNumFiles; ++i)
+    {
+      printf("Loading form : %s\n",sFileList[i]);
 
-    // finding maximum & minimum
-    if(hist->GetMaximum() > dMaximum) dMaximum = 1.2 * hist->GetMaximum();
-    if(hist->GetMinimum() < dMinimum) dMinimum = hist->GetMinimum();
+      // loading from root file
+      TFile* file = TFile::Open(sFileList[i],"READ");
+      if(!file) { printf("ERROR : Cannot open file '%s'!\n",sFileList[i]); continue; }
 
-    list->Add(hist);
+      TH1D* hist = (TH1D*) file->Get(sHistoName);
+      if(!hist) { printf("ERROR : Cannot find histo '%s'!\n",sHistoName); file->ls(); continue; }
+
+      // finding maximum & minimum
+      if(hist->GetMaximum() > dMaximum) dMaximum = 1.2 * hist->GetMaximum();
+      if(hist->GetMinimum() < dMinimum) dMinimum = hist->GetMinimum();
+
+      list->Add(hist);
+    }
+
+    if(dMaximum < gdMaximum) dMaximum = gdMaximum;
+    if(dMinimum > 0.) dMinimum = 0.0;
+
+    printf("Min %g \t Max %g \n",dMinimum,dMaximum);
+
+    Int_t iEntries = list->GetEntries();
+    printf("Number of entries in list : %d\n",iEntries);
+
+    TLegend* leg = new TLegend(0.15,0.5,0.6,0.88);
+    leg->SetTextSize(0.03);
+
+    TCanvas* can = new TCanvas("can","can");
+    can->Divide(2,1);
+    can->cd(1);
+
+    for(Int_t i(0); i < iEntries; ++i)
+    {
+      TH1D* hist = (TH1D*) list->At(i);
+
+      hist->SetMaximum(1.*dMaximum);
+      hist->SetMinimum(dMinimum);
+      // hist->SetMaximum(gdMaximum);
+      hist->SetTitle("");
+      hist->GetXaxis()->SetTitle("p_{T} (GeV/c)");
+      hist->GetYaxis()->SetTitle("v_{2}");
+      hist->SetStats(kFALSE);
+      hist->SetLineColor(gColors[i]);
+      hist->SetMarkerColor(gColors[i]);
+      hist->SetMarkerStyle(gMarkerStyles[i]);
+      leg->AddEntry(hist,gsLabels[i],"pel");
+      hist->Draw("same");
+    }
+    leg->SetFillColorAlpha(0,0);
+    leg->SetBorderSize(0);
+    leg->Draw();
+    // reference histo (first in list)
+    TH1D* hBaseline = (TH1D*) list->At(0);
+
+    can->cd(2);
+    for(Int_t i(0); i < iEntries; ++i)
+    {
+      TH1D* hist = (TH1D*) list->At(i);
+      TH1D* ratio = (TH1D*) DivideHistos(hist,hBaseline);
+      hist->SetTitle("");
+      ratio->GetXaxis()->SetTitle("p_{T} (GeV/c)");
+      ratio->GetYaxis()->SetTitle("Ratio wrt. standard v_{2}{2}");
+      ratio->SetLineColor(gColors[i]);
+      ratio->SetMarkerColor(gColors[i]);
+      ratio->SetMinimum(0.);
+      ratio->SetMaximum(2.);
+      ratio->Draw("same");
+    }
+
+    // writing
+    gSystem->mkdir(gsOutputFolder,kTRUE);
+
+    can->SaveAs(Form("%s/comp_%s.pdf",gsOutputFolder,sHistoName),"pdf");
 
   }
-
-  printf("Min %g \t Max %g \n",dMinimum,dMaximum);
-
-  Int_t iEntries = list->GetEntries();
-  printf("Number of entries in list : %d\n",iEntries);
-
-  TLegend* leg = new TLegend(0.6,0.2,0.89,0.4);
-
-  TCanvas* can = new TCanvas("can","can");
-  can->Divide(2,1);
-  can->cd(1);
-
-
-  for(Int_t i(0); i < iEntries; ++i)
-  {
-    TH1D* hist = (TH1D*) list->At(i);
-
-
-    hist->SetMaximum(1.*dMaximum);
-
-    hist->SetStats(kFALSE);
-    hist->SetLineColor(gColors[i]);
-    hist->SetMarkerColor(gColors[i]);
-    hist->SetMarkerStyle(gMarkerStyles[i]);
-    leg->AddEntry(hist,gsLabels[i],"pel");
-    hist->Draw("same");
-  }
-  leg->SetFillColorAlpha(0,0);
-  leg->SetBorderSize(0);
-  leg->Draw();
-  // reference histo (first in list)
-  TH1D* hBaseline = (TH1D*) list->At(0);
-
-  can->cd(2);
-  for(Int_t i(0); i < iEntries; ++i)
-  {
-    TH1D* hist = (TH1D*) list->At(i);
-    TH1D* ratio = (TH1D*) DivideHistos(hist,hBaseline);
-    ratio->SetLineColor(gColors[i]);
-    ratio->SetMarkerColor(gColors[i]);
-    ratio->SetMinimum(0.8);
-    ratio->SetMaximum(1.2);
-    ratio->Draw("same");
-  }
-
-  // writing
-  gSystem->mkdir(gsOutputFolder,kTRUE);
-
-  can->SaveAs(Form("%s/comp_%s.pdf",gsOutputFolder,sHistoName),"pdf");
 
   return;
 }
