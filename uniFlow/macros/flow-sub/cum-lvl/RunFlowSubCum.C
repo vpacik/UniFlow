@@ -6,7 +6,7 @@
  * Author: Vojtech Pacik (vojtech.pacik@cern.ch), NBI, 2017
  */
 
-void RunFlowSub(const char* sOutputFilePath = "")
+void RunFlowSubCum(const char* sOutputFilePath = "")
 {
 	// ##### Parameters setting ######
 	Double_t dEtaGap = 0.0;
@@ -116,9 +116,10 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process->SetInputFileName("AnalysisResults.root");
 	process->SetTaskName("UniFlow");
 	// process->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process->SetOutputFilePath(Form("%s/output_vn/GF_eventweighted",sInputPath));
+	process->SetOutputFilePath(Form("%s/output_cum/GF_eventweighted",sInputPath));
 	process->SetOutputFileName("Processed.root");
 	process->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
+	process->SetFitCumulants();
 	process->AddTask(taskRefs);
 	process->AddTask(taskCharged);
 	process->AddTask(taskPion);
@@ -135,9 +136,10 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_noweight->SetTaskName("UniFlow");
 	process_noweight->SetGlobalProfNameLabel("multScaled_");
 	// process_noweight->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_noweight->SetOutputFilePath(Form("%s/output_vn/GF_noneventweighted",sInputPath));
+	process_noweight->SetOutputFilePath(Form("%s/output_cum/GF_noneventweighted",sInputPath));
 	process_noweight->SetOutputFileName("Processed.root");
 	process_noweight->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
+	process_noweight->SetFitCumulants();
 	process_noweight->AddTask(taskRefs);
 	process_noweight->AddTask(taskCharged);
 	process_noweight->AddTask(taskPion);
@@ -153,9 +155,10 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_sub->SetInputFileName("AnalysisResults.root");
 	process_sub->SetTaskName("UniFlow_sub");
 	// process_sub->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_sub->SetOutputFilePath(Form("%s/output_vn/SP_nonscaled_noneventweighted",sInputPath));
+	process_sub->SetOutputFilePath(Form("%s/output_cum/SP_nonscaled_noneventweighted",sInputPath));
 	process_sub->SetOutputFileName("Processed.root");
 	process_sub->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
+	process_sub->SetFitCumulants();
 	process_sub->SetSaveMult("Mult.root");
 	process_sub->AddTask(taskRefs);
 	process_sub->AddTask(taskCharged);
@@ -173,9 +176,10 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_sub_norm->SetTaskName("UniFlow_sub");
 	process_sub_norm->SetGlobalProfNameLabel("multScaled_");
 	// process_sub_norm->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_sub_norm->SetOutputFilePath(Form("%s/output_vn/SP_scaled_noneventweighted",sInputPath));
+	process_sub_norm->SetOutputFilePath(Form("%s/output_cum/SP_scaled_noneventweighted",sInputPath));
 	process_sub_norm->SetOutputFileName("Processed.root");
 	process_sub_norm->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
+	process_sub_norm->SetFitCumulants();
 	process_sub_norm->AddTask(taskRefs);
 	process_sub_norm->AddTask(taskCharged);
 	process_sub_norm->AddTask(taskPion);
@@ -192,9 +196,10 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_sub_norm_weighted->SetTaskName("UniFlow_sub");
 	process_sub_norm_weighted->SetGlobalProfNameLabel("multScaled_weighted_");
 	// process_sub_norm_weighted->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_sub_norm_weighted->SetOutputFilePath(Form("%s/output_vn/SP_scaled_eventweighted",sInputPath));
+	process_sub_norm_weighted->SetOutputFilePath(Form("%s/output_cum/SP_scaled_eventweighted",sInputPath));
 	process_sub_norm_weighted->SetOutputFileName("Processed.root");
 	process_sub_norm_weighted->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
+	process_sub_norm_weighted->SetFitCumulants();
 	process_sub_norm_weighted->AddTask(taskRefs);
 	process_sub_norm_weighted->AddTask(taskCharged);
 	process_sub_norm_weighted->AddTask(taskPion);
