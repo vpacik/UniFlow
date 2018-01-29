@@ -46,7 +46,7 @@ void Subt_ppb_pp()
   TFile* fileOut = OpenFile(sOutFile,"RECREATE"); if(!fileOut) { return; }
 
   TH1D* hBase_Cum_Charged_int = LoadHisto("hCum2_Charged_harm2_gap08_cent0",fileInBaseInt); if(!hBase_Cum_Charged_int) { return; }
-  StyleHist(hBase_Cum_Charged_int, kRed, kOpenCircle);
+  StyleHist(hBase_Cum_Charged_int, kBlue, kFullCircle);
 
   TList* list_Raw_Cum_Charged = new TList();
   TList* list_Base_Cum_Charged = new TList();
@@ -54,22 +54,22 @@ void Subt_ppb_pp()
   for(Int_t cent(0); cent < iNumCent; ++cent)
   {
     TH1D* temp = LoadHisto(Form("hCum2_Charged_harm2_gap08_cent%d",cent),fileInRaw); if(!temp) { return; }
-    StyleHist(temp, colors[cent], kOpenSquare);
+    StyleHist(temp, kRed, kOpenSquare);
     list_Raw_Cum_Charged->Add(temp);
 
     temp = LoadHisto(Form("hCum2_Charged_harm2_gap08_cent%d",cent),fileInBase); if(!temp) { return; }
-    StyleHist(temp, colors[cent], kFullCircle);
+    StyleHist(temp, kGreen+2, kFullCircle);
     list_Base_Cum_Charged->Add(temp);
   }
 
   TH1D* hRaw_Cum_Refs = LoadHisto("hCum2_Refs_harm2_gap08", fileInRaw); if(!hRaw_Cum_Refs) { return; }
-  StyleHist(hRaw_Cum_Refs, kRed, kFullCircle);
+  StyleHist(hRaw_Cum_Refs, kRed, kOpenSquare);
 
   TH1D* hBase_Cum_Refs = LoadHisto("hCum2_Refs_harm2_gap08",fileInBase); if(!hBase_Cum_Refs) { return; }
-  StyleHist(hBase_Cum_Refs, kGreen+2, kOpenSquare);
+  StyleHist(hBase_Cum_Refs, kGreen+2, kFullCircle);
 
   TH1D* hBase_Cum_Refs_int = LoadHisto("hCum2_Refs_harm2_gap08",fileInBaseInt); if(!hBase_Cum_Refs_int) { return; }
-  StyleHist(hBase_Cum_Refs_int, kMagenta, kOpenSquare);
+  StyleHist(hBase_Cum_Refs_int, kBlue, kFullCircle);
 
   // multiplicities
   TFile* fileInRaw_Mult = OpenFile(sInFileRaw+"/Mult.root"); if(!fileInRaw_Mult) { return; }
@@ -139,26 +139,31 @@ void Subt_ppb_pp()
   list_Raw_Cum_Charged->Write("list_Raw_Cum_Charged",TObject::kSingleKey);
   list_Base_Cum_Charged->Write("list_Base_Cum_Charged",TObject::kSingleKey);
   hBase_Cum_Charged_int->Write();
-  hBase_Cum_Charged_int_scaled->Write();
   list_Raw_Cum_Charged_scaled->Write("list_Raw_Cum_Charged_scaled",TObject::kSingleKey);
   list_Base_Cum_Charged_scaled->Write("list_Base_Cum_Charged_scaled",TObject::kSingleKey);
+  hBase_Cum_Charged_int_scaled->Write();
 
 
   // subtracting (scaled) histos
   TList* list_SubtPP_Cum_Charged = new TList();
-
+  TList* list_SubtPP_Cum_Charged_int = new TList();
   for(Int_t centRaw(0); centRaw < iNumCent; ++centRaw)
   {
     TH1D* temp_raw_cent = (TH1D*) list_Raw_Cum_Charged_scaled->At(centRaw);
+    // subtracting (cent) pp
+    TH1D* hSubPP_Cum_Charged = Subtract(temp_raw_cent, (TH1D*) list_Base_Cum_Charged_scaled->At(centRaw));
+    list_SubtPP_Cum_Charged->Add(hSubPP_Cum_Charged);
+
+    // subtracting (int) pp
     TH1D* hSubPP_Cum_Charged_int = Subtract(temp_raw_cent, hBase_Cum_Charged_int_scaled);
-    fileOut->cd();
-    hSubPP_Cum_Charged_int->Write(Form("SubtPP_Cum_Charged_cent%d",centRaw));
+    list_SubtPP_Cum_Charged_int->Add(hSubPP_Cum_Charged_int);
 
     TLegend* leg = new TLegend(0.1,0.5,0.6,0.89);
     leg->SetBorderSize(0.);
     leg->SetFillColor(0);
     leg->AddEntry(temp_raw_cent,Form("Unsub pPb (%s)",sCentLabel[centRaw].Data()),"p");
     leg->AddEntry(hBase_Cum_Charged_int,"pp (0-100%)","p");
+    leg->AddEntry(hSubPP_Cum_Charged,Form("pp (%s)",sCentLabel[centRaw].Data()),"p");
 
     TCanvas* can = new TCanvas("can","can",1200,400);
     can->Divide(3,1);
@@ -167,73 +172,73 @@ void Subt_ppb_pp()
     frame->SetTitle("raw <<2'>>; p_{T} (GeV/c)");
     ((TH1D*) list_Raw_Cum_Charged->At(centRaw))->Draw("same");
     hBase_Cum_Charged_int->Draw("same");
+    ((TH1D*) list_Base_Cum_Charged->At(centRaw))->Draw("same");
+    leg->Draw();
 
     can->cd(2);
     TH1* frame2 = gPad->DrawFrame(0,-0.03,10,1.0);
     frame2->SetTitle("<M> * <<2'>>; p_{T} (GeV/c)");
     temp_raw_cent->Draw("same");
     hBase_Cum_Charged_int_scaled->Draw("same");
+    ((TH1D*) list_Base_Cum_Charged_scaled->At(centRaw))->Draw("same");
 
     can->cd(3);
     TH1* frame3 = gPad->DrawFrame(0,-0.3,10,0.5);
     frame3->SetTitle("<M>^{pPb}<<2'>>^{pPb} - <M>^{pp}<<2'>>^{pp}; p_{T} (GeV/c)");
     hSubPP_Cum_Charged_int->Draw("same");
+    hSubPP_Cum_Charged->Draw("same");
 
-    for(Int_t cent(0); cent < iNumCent; ++cent)
-    {
-      TH1D* hSubPP_Cum_Charged = Subtract(temp_raw_cent, (TH1D*) list_Base_Cum_Charged_scaled->At(cent));
-      list_SubtPP_Cum_Charged->Add(hSubPP_Cum_Charged);
-
-      leg->AddEntry(hSubPP_Cum_Charged,Form("pp (%s)",sCentLabel[cent].Data()),"p");
-
-      can->cd(1);
-      ((TH1D*) list_Base_Cum_Charged->At(cent))->Draw("same");
-
-      can->cd(2);
-      ((TH1D*) list_Base_Cum_Charged_scaled->At(cent))->Draw("same");
-
-      can->cd(3);
-      hSubPP_Cum_Charged->Draw("same");
-    }
-    list_SubtPP_Cum_Charged->Write(Form("list_SubtPP_Cum_Charged_cent%d",centRaw),TObject::kSingleKey);
-
-    can->cd(1);
-    leg->Draw();
     can->SaveAs(Form("%s/Subt_pp-pbp_cent%d.pdf",sOutFolder.Data(),centRaw),"pdf");
+  }
 
+  // Saving to output ROOT file
+  fileOut->cd();
+  list_SubtPP_Cum_Charged->Write("list_SubtPP_Charged_cum_ppcent",TObject::kSingleKey);
+  list_SubtPP_Cum_Charged_int->Write("list_SubtPP_Charged_cum_ppint",TObject::kSingleKey);
 
-    // making final vn{2}^{sub} = dn{2}^{sub} / sqrt(cn{2}^{sub})
+  // Making vn^sub out of dn^sub / sqrt(cn^sub)
+  // making final vn{2}^{sub} = dn{2}^{sub} / sqrt(cn{2}^{sub})
 
+  TList* list_SubtPP_vn_Charged = new TList();
+  TList* list_SubtPP_vn_Charged_int = new TList();
+  for(Int_t centRaw(0); centRaw < iNumCent; ++centRaw)
+  {
     TH1D* hSub_dn = (TH1D*) list_SubtPP_Cum_Charged->At(centRaw); if(!hSub_dn) { return; }
+
     // dividing by cn{2}^sub (cent)
     TH1D* hSubPP_vn = (TH1D*) hSub_dn->Clone(Form("%s_vn", hSub_dn->GetName())); if(!hSubPP_vn) { return; }
+    StyleHist(hSubPP_vn, kGreen+2, kFullCircle);
     hSubPP_vn->Scale(1.0/TMath::Sqrt(hSub_Cum_Refs->GetBinContent(centRaw+1)));
-    // list_SubtPP_Cum_Charged_vn->Add(hSubPP_vn);
+    list_SubtPP_vn_Charged->Add(hSubPP_vn);
 
     // dividing by cn{2}^sub (int)
     TH1D* hSubPP_vn_int = (TH1D*) hSub_dn->Clone(Form("%s_vn_int", hSub_dn->GetName())); if(!hSubPP_vn_int) { return; }
+    StyleHist(hSubPP_vn_int, kBlue, kFullCircle);
     hSubPP_vn_int->Scale(1.0/TMath::Sqrt(hSub_Cum_Refs_int->GetBinContent(1)));
+    list_SubtPP_vn_Charged_int->Add(hSubPP_vn_int);
 
-
-    TCanvas* canVn = new TCanvas("canVn","canVn",1200,400);
-    canVn->Divide(3,1);
+    TCanvas* canVn = new TCanvas("canVn","canVn",400,400);
+    // canVn->Divide(,1);
     canVn->cd(1);
     TH1* frame_vn = (TH1*) gPad->DrawFrame(0.,0.,10.,0.5);
     frame_vn->SetTitle("sub vn{2}; p_{T} (GeV/c)");
     hSubPP_vn->Draw("same");
     hSubPP_vn_int->Draw("same");
-    canVn->cd(2);
-    canVn->cd(3);
+    // canVn->cd(2);
+    // canVn->cd(3);
 
     canVn->SaveAs(Form("%s/Subt_ppb_pp_vn_cent%d.pdf",sOutFolder.Data(),centRaw),"pdf");
 
-
-
-
-
   }
 
-  // Saving to output ROOT file
+  fileOut->cd();
+  list_SubtPP_vn_Charged->Write("list_SubtPP_Charged_vn_ppcent",TObject::kSingleKey);
+  list_SubtPP_vn_Charged_int->Write("list_SubtPP_Charged_vn_ppint",TObject::kSingleKey);
+
+
+
+
+
 
   // UNIVERSALL PLOTTING
   // RFPs
@@ -254,7 +259,7 @@ void Subt_ppb_pp()
   hBase_Cum_Refs_int->Draw("same");
   leg_Refs->Draw();
   canRefs->cd(2);
-  TH1* frame_Ref_2 = (TH1*) gPad->DrawFrame(0,0,100,10.0);
+  TH1* frame_Ref_2 = (TH1*) gPad->DrawFrame(0,-1.0,100,10.0);
   frame_Ref_2->SetTitle("<M>^{2} * <<2>>; cent %");
   hRaw_Cum_Refs_scaled->Draw("same");
   hBase_Cum_Refs_scaled->Draw("same");
