@@ -7,7 +7,7 @@
 #include "TSystem.h"
 #include "TMath.h"
 
-TFile* OpenFile(TString sFileName);
+TFile* OpenFile(TString sFileName, TString sMode = "READ");
 TH1D* LoadHisto(TString sHistName, TFile* file);
 void StyleHist(TH1* hist, Color_t color = kRed, Style_t markerStyle = kOpenCircle);
 
@@ -28,7 +28,8 @@ void Subt_ppb_pp()
   TString sInFileRaw = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gap08/" + sOutputTag;
   TString sInFileBase = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-gap08/" + sOutputTag;
   TString sInFileBaseInt = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-gap08/" + sOutputTagInt;
-  TString sOutFolder = sInFileRaw+"/"+sMethod+"/plots";
+  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb-pp";
+  TString sOutFile = sOutFolder+"/Subt_results.root";
 
   const Int_t iNumCent = 4;
   TString sCentLabel[iNumCent] = {"0-20%", "20-40%", "40-60%", "60-100%"};
@@ -42,6 +43,7 @@ void Subt_ppb_pp()
   TFile* fileInRaw = OpenFile(sInFileRaw+"/"+sMethod+"/Processed.root"); if(!fileInRaw) { return; }
   TFile* fileInBase = OpenFile(sInFileBase+"/"+sMethod+"/Processed.root"); if(!fileInBase) { return; }
   TFile* fileInBaseInt = OpenFile(sInFileBaseInt+"/"+sMethod+"/Processed.root"); if(!fileInBaseInt) { return; }
+  TFile* fileOut = OpenFile(sOutFile,"RECREATE"); if(!fileOut) { return; }
 
   TH1D* hBase_Cum_Charged_int = LoadHisto("hCum2_Charged_harm2_gap08_cent0",fileInBaseInt); if(!hBase_Cum_Charged_int) { return; }
   StyleHist(hBase_Cum_Charged_int, kRed, kOpenCircle);
@@ -52,13 +54,22 @@ void Subt_ppb_pp()
   for(Int_t cent(0); cent < iNumCent; ++cent)
   {
     TH1D* temp = LoadHisto(Form("hCum2_Charged_harm2_gap08_cent%d",cent),fileInRaw); if(!temp) { return; }
-    StyleHist(temp, colors[cent], kFullCircle);
+    StyleHist(temp, colors[cent], kOpenSquare);
     list_Raw_Cum_Charged->Add(temp);
 
     temp = LoadHisto(Form("hCum2_Charged_harm2_gap08_cent%d",cent),fileInBase); if(!temp) { return; }
-    StyleHist(temp, colors[cent], kOpenSquare);
+    StyleHist(temp, colors[cent], kFullCircle);
     list_Base_Cum_Charged->Add(temp);
   }
+
+  TH1D* hRaw_Cum_Refs = LoadHisto("hCum2_Refs_harm2_gap08", fileInRaw); if(!hRaw_Cum_Refs) { return; }
+  StyleHist(hRaw_Cum_Refs, kRed, kFullCircle);
+
+  TH1D* hBase_Cum_Refs = LoadHisto("hCum2_Refs_harm2_gap08",fileInBase); if(!hBase_Cum_Refs) { return; }
+  StyleHist(hBase_Cum_Refs, kGreen+2, kOpenSquare);
+
+  TH1D* hBase_Cum_Refs_int = LoadHisto("hCum2_Refs_harm2_gap08",fileInBaseInt); if(!hBase_Cum_Refs_int) { return; }
+  StyleHist(hBase_Cum_Refs_int, kMagenta, kOpenSquare);
 
   // multiplicities
   TFile* fileInRaw_Mult = OpenFile(sInFileRaw+"/Mult.root"); if(!fileInRaw_Mult) { return; }
@@ -71,6 +82,44 @@ void Subt_ppb_pp()
   TProfile* hBase_MultInt = (TProfile*) LoadHisto("fpRefsMult_rebin",fileInBase_MultInt); if(!hBase_MultInt) { return; }
   Double_t dMult_Base_Int = hBase_MultInt->GetBinContent(1);
 
+  // SUBTRACTION
+
+  // Working on the c_n{2} Subtraction
+  // cn{2}^sub = <M>^raw * cn{2}^raw - <M>^base * cn{2}^base
+
+  // scaling REFS by <M>^2
+  TH1D* hRaw_Cum_Refs_scaled = (TH1D*) hRaw_Cum_Refs->Clone(Form("%s_scaled",hRaw_Cum_Refs->GetName())); if(!hRaw_Cum_Refs_scaled) { return; }
+  for(Int_t bin(1); bin < hRaw_Cum_Refs_scaled->GetNbinsX()+1; ++bin)
+  {
+    hRaw_Cum_Refs_scaled->SetBinContent(bin, hRaw_Cum_Refs->GetBinContent(bin) * TMath::Power(hRaw_Mult->GetBinContent(bin),2.0) );
+  }
+
+  TH1D* hBase_Cum_Refs_scaled = (TH1D*) hBase_Cum_Refs->Clone(Form("%s_scaled",hBase_Cum_Refs->GetName())); if(!hBase_Cum_Refs_scaled) { return; }
+  for(Int_t bin(1); bin < hBase_Cum_Refs_scaled->GetNbinsX()+1; ++bin)
+  {
+    hBase_Cum_Refs_scaled->SetBinContent(bin, hBase_Cum_Refs->GetBinContent(bin) * TMath::Power(hBase_Mult->GetBinContent(bin),2.0) );
+  }
+
+  TH1D* hBase_Cum_Refs_int_scaled = (TH1D*) hBase_Cum_Refs_int->Clone(Form("%s_scaled",hBase_Cum_Refs_int->GetName())); if(!hBase_Cum_Refs_int_scaled) { return; }
+  for(Int_t bin(1); bin < hBase_Cum_Refs_int_scaled->GetNbinsX()+1; ++bin)
+  {
+    hBase_Cum_Refs_int_scaled->SetBinContent(bin, hBase_Cum_Refs_int->GetBinContent(bin) * TMath::Power(hBase_MultInt->GetBinContent(bin),2.0) );
+  }
+
+  TH1D* hSub_Cum_Refs = Subtract(hRaw_Cum_Refs_scaled, hBase_Cum_Refs_scaled,1.0); if(!hSub_Cum_Refs) { return; }
+  TH1D* hSub_Cum_Refs_int = Subtract(hRaw_Cum_Refs_scaled, hBase_Cum_Refs_int_scaled,1.0); if(!hSub_Cum_Refs_int) { return; }
+
+  fileOut->cd();
+  hRaw_Cum_Refs->Write("hRaw_Cum_Refs");
+  hBase_Cum_Refs->Write("hBase_Cum_Refs");
+  hBase_Cum_Refs_int->Write("hBase_Cum_Refs_int");
+  hRaw_Cum_Refs_scaled->Write("hRaw_Cum_Refs_scaled");
+  hBase_Cum_Refs_scaled->Write("hBase_Cum_Refs_scaled");
+  hBase_Cum_Refs_int_scaled->Write("hBase_Cum_Refs_int_scaled");
+  hSub_Cum_Refs->Write("hSub_Cum_Refs");
+  hSub_Cum_Refs_int->Write("hSub_Cum_Refs_int");
+
+  // dn{2}^sub = <M>dn{2}^raw - <M>dn{2}^base
   // scaling base with pre-factor
   TH1D* hBase_Cum_Charged_int_scaled = Scale(hBase_Cum_Charged_int, hBase_MultInt->GetBinContent(1));
 
@@ -86,6 +135,15 @@ void Subt_ppb_pp()
     list_Base_Cum_Charged_scaled->Add(base_scaled);
   }
 
+  fileOut->cd();
+  list_Raw_Cum_Charged->Write("list_Raw_Cum_Charged",TObject::kSingleKey);
+  list_Base_Cum_Charged->Write("list_Base_Cum_Charged",TObject::kSingleKey);
+  hBase_Cum_Charged_int->Write();
+  hBase_Cum_Charged_int_scaled->Write();
+  list_Raw_Cum_Charged_scaled->Write("list_Raw_Cum_Charged_scaled",TObject::kSingleKey);
+  list_Base_Cum_Charged_scaled->Write("list_Base_Cum_Charged_scaled",TObject::kSingleKey);
+
+
   // subtracting (scaled) histos
   TList* list_SubtPP_Cum_Charged = new TList();
 
@@ -93,8 +151,12 @@ void Subt_ppb_pp()
   {
     TH1D* temp_raw_cent = (TH1D*) list_Raw_Cum_Charged_scaled->At(centRaw);
     TH1D* hSubPP_Cum_Charged_int = Subtract(temp_raw_cent, hBase_Cum_Charged_int_scaled);
+    fileOut->cd();
+    hSubPP_Cum_Charged_int->Write(Form("SubtPP_Cum_Charged_cent%d",centRaw));
 
     TLegend* leg = new TLegend(0.1,0.5,0.6,0.89);
+    leg->SetBorderSize(0.);
+    leg->SetFillColor(0);
     leg->AddEntry(temp_raw_cent,Form("Unsub pPb (%s)",sCentLabel[centRaw].Data()),"p");
     leg->AddEntry(hBase_Cum_Charged_int,"pp (0-100%)","p");
 
@@ -102,19 +164,19 @@ void Subt_ppb_pp()
     can->Divide(3,1);
     can->cd(1);
     TH1* frame = gPad->DrawFrame(0,0,10,0.2);
-    frame->SetTitle("raw <<2'>>");
+    frame->SetTitle("raw <<2'>>; p_{T} (GeV/c)");
     ((TH1D*) list_Raw_Cum_Charged->At(centRaw))->Draw("same");
     hBase_Cum_Charged_int->Draw("same");
 
     can->cd(2);
     TH1* frame2 = gPad->DrawFrame(0,-0.03,10,1.0);
-    frame2->SetTitle("<M> * <<2'>>");
+    frame2->SetTitle("<M> * <<2'>>; p_{T} (GeV/c)");
     temp_raw_cent->Draw("same");
     hBase_Cum_Charged_int_scaled->Draw("same");
 
     can->cd(3);
     TH1* frame3 = gPad->DrawFrame(0,-0.3,10,0.5);
-    frame3->SetTitle("<M>^{pPb}<<2'>>^{pPb} - <M>^{pp}<<2'>>^{pp} ");
+    frame3->SetTitle("<M>^{pPb}<<2'>>^{pPb} - <M>^{pp}<<2'>>^{pp}; p_{T} (GeV/c)");
     hSubPP_Cum_Charged_int->Draw("same");
 
     for(Int_t cent(0); cent < iNumCent; ++cent)
@@ -133,19 +195,83 @@ void Subt_ppb_pp()
       can->cd(3);
       hSubPP_Cum_Charged->Draw("same");
     }
+    list_SubtPP_Cum_Charged->Write(Form("list_SubtPP_Cum_Charged_cent%d",centRaw),TObject::kSingleKey);
 
     can->cd(1);
     leg->Draw();
     can->SaveAs(Form("%s/Subt_pp-pbp_cent%d.pdf",sOutFolder.Data(),centRaw),"pdf");
 
+
+    // making final vn{2}^{sub} = dn{2}^{sub} / sqrt(cn{2}^{sub})
+
+    TH1D* hSub_dn = (TH1D*) list_SubtPP_Cum_Charged->At(centRaw); if(!hSub_dn) { return; }
+    // dividing by cn{2}^sub (cent)
+    TH1D* hSubPP_vn = (TH1D*) hSub_dn->Clone(Form("%s_vn", hSub_dn->GetName())); if(!hSubPP_vn) { return; }
+    hSubPP_vn->Scale(1.0/TMath::Sqrt(hSub_Cum_Refs->GetBinContent(centRaw+1)));
+    // list_SubtPP_Cum_Charged_vn->Add(hSubPP_vn);
+
+    // dividing by cn{2}^sub (int)
+    TH1D* hSubPP_vn_int = (TH1D*) hSub_dn->Clone(Form("%s_vn_int", hSub_dn->GetName())); if(!hSubPP_vn_int) { return; }
+    hSubPP_vn_int->Scale(1.0/TMath::Sqrt(hSub_Cum_Refs_int->GetBinContent(1)));
+
+
+    TCanvas* canVn = new TCanvas("canVn","canVn",1200,400);
+    canVn->Divide(3,1);
+    canVn->cd(1);
+    TH1* frame_vn = (TH1*) gPad->DrawFrame(0.,0.,10.,0.5);
+    frame_vn->SetTitle("sub vn{2}; p_{T} (GeV/c)");
+    hSubPP_vn->Draw("same");
+    hSubPP_vn_int->Draw("same");
+    canVn->cd(2);
+    canVn->cd(3);
+
+    canVn->SaveAs(Form("%s/Subt_ppb_pp_vn_cent%d.pdf",sOutFolder.Data(),centRaw),"pdf");
+
+
+
+
+
   }
+
+  // Saving to output ROOT file
+
+  // UNIVERSALL PLOTTING
+  // RFPs
+  TLegend* leg_Refs = new TLegend(0.12,0.12,0.6,0.3);
+  leg_Refs->SetBorderSize(0.);
+  leg_Refs->SetFillColor(0);
+  leg_Refs->AddEntry(hRaw_Cum_Refs,"Unsub pPb","p");
+  leg_Refs->AddEntry(hBase_Cum_Refs,"pp ","p");
+  leg_Refs->AddEntry(hBase_Cum_Refs_int,"pp (0-100%)","p");
+
+  TCanvas* canRefs = new TCanvas("canRefs","canRefs",1200,400);
+  canRefs->Divide(3,1);
+  canRefs->cd(1);
+  TH1* frame_Ref = (TH1*) gPad->DrawFrame(0,0,100,0.01);
+  frame_Ref->SetTitle("raw <<2>>; cent %");
+  hRaw_Cum_Refs->Draw("same");
+  hBase_Cum_Refs->Draw("same");
+  hBase_Cum_Refs_int->Draw("same");
+  leg_Refs->Draw();
+  canRefs->cd(2);
+  TH1* frame_Ref_2 = (TH1*) gPad->DrawFrame(0,0,100,10.0);
+  frame_Ref_2->SetTitle("<M>^{2} * <<2>>; cent %");
+  hRaw_Cum_Refs_scaled->Draw("same");
+  hBase_Cum_Refs_scaled->Draw("same");
+  hBase_Cum_Refs_int_scaled->Draw("same");
+  canRefs->cd(3);
+  TH1* frame_Ref_3 = (TH1*) gPad->DrawFrame(0,0,100,10.0);
+  frame_Ref_3->SetTitle("<M>^{raw,2} <<2>> - <M>^{base,2}<<2>>; cent %");
+  hSub_Cum_Refs->Draw("same");
+  hSub_Cum_Refs_int->Draw("same");
+  canRefs->SaveAs(Form("%s/cn_subt.pdf",sOutFolder.Data()),"pdf");
 
   return;
 }
 // ==================================================================================================================
-TFile* OpenFile(TString sFileName)
+TFile* OpenFile(TString sFileName, TString sMode)
 {
-  TFile* file = TFile::Open(sFileName.Data(),"READ");
+  TFile* file = TFile::Open(sFileName.Data(),sMode.Data());
   if(!file) { printf("ERROR: Input file '%s' not found.\n",sFileName.Data()); return 0x0; }
 
   return file;
