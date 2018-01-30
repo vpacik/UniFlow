@@ -12,6 +12,7 @@ TH1D* LoadHisto(TString sHistName, TFile* file);
 void StyleHist(TH1* hist, Color_t color = kRed, Style_t markerStyle = kOpenCircle);
 
 TH1D* Scale(TH1D* base, Double_t factor);
+TH1D* ScaleCn(TH1D* base, TH1D* mult);
 TH1D* Subtract(TH1D* raw, TH1D* base, Double_t factor = 1.0);
 
 // colors for centrality
@@ -38,42 +39,8 @@ void Subt_ppb_pp()
   TString sCentLabel[iNumCent] = {"0-20%", "20-40%", "40-60%", "60-100%"};
 
   // ==================================================================================================================
-  // Making output folder
-  gSystem->mkdir(sOutFolder,kTRUE);
 
-  // LOADING INPUT
-
-  TFile* fileInRaw = OpenFile(sInFileRaw+"/"+sMethod+"/Processed.root"); if(!fileInRaw) { return; }
-  TFile* fileInBase = OpenFile(sInFileBase+"/"+sMethod+"/Processed.root"); if(!fileInBase) { return; }
-  TFile* fileInBaseInt = OpenFile(sInFileBaseInt+"/"+sMethod+"/Processed.root"); if(!fileInBaseInt) { return; }
-  TFile* fileOut = OpenFile(sOutFile,"RECREATE"); if(!fileOut) { return; }
-
-  TH1D* hBase_dn_int = LoadHisto(Form("hCum2_%s_harm2_%s_cent0",sSpecies.Data(),sGapBase.Data()),fileInBaseInt); if(!hBase_dn_int) { return; }
-  StyleHist(hBase_dn_int, kBlue, kFullCircle);
-
-  TList* list_Raw_dn = new TList();
-  TList* list_Base_dn = new TList();
-
-  for(Int_t cent(0); cent < iNumCent; ++cent)
-  {
-    TH1D* temp = LoadHisto(Form("hCum2_%s_harm2_%s_cent%d",sSpecies.Data(),sGapRaw.Data(),cent),fileInRaw); if(!temp) { return; }
-    StyleHist(temp, kRed, kOpenSquare);
-    list_Raw_dn->Add(temp);
-
-    temp = LoadHisto(Form("hCum2_%s_harm2_%s_cent%d",sSpecies.Data(),sGapBase.Data(),cent),fileInBase); if(!temp) { return; }
-    StyleHist(temp, kGreen+2, kFullCircle);
-    list_Base_dn->Add(temp);
-  }
-
-  TH1D* hRaw_cn = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapRaw.Data()),fileInRaw); if(!hRaw_cn) { return; }
-  StyleHist(hRaw_cn, kRed, kOpenSquare);
-
-  TH1D* hBase_cn = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapBase.Data()),fileInBase); if(!hBase_cn) { return; }
-  StyleHist(hBase_cn, kGreen+2, kFullCircle);
-
-  TH1D* hBase_cn_int = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapBase.Data()),fileInBaseInt); if(!hBase_cn_int) { return; }
-  StyleHist(hBase_cn_int, kBlue, kFullCircle);
-
+  // === LOADING INPUT ===
   // multiplicities
   TFile* fileInRaw_Mult = OpenFile(sInFileRaw+"/Mult.root"); if(!fileInRaw_Mult) { return; }
   TProfile* hRaw_Mult = (TProfile*) LoadHisto("fpRefsMult_rebin",fileInRaw_Mult); if(!hRaw_Mult) { return; }
@@ -85,37 +52,53 @@ void Subt_ppb_pp()
   TProfile* hBase_MultInt = (TProfile*) LoadHisto("fpRefsMult_rebin",fileInBase_MultInt); if(!hBase_MultInt) { return; }
   Double_t dMult_Base_Int = hBase_MultInt->GetBinContent(1);
 
-  // preparing lists
+  // output files
+  gSystem->mkdir(sOutFolder,kTRUE);  // Making output folder
+  TFile* fileOut = OpenFile(sOutFile,"RECREATE"); if(!fileOut) { return; }
 
+  // input files
+  TFile* fileInRaw = OpenFile(sInFileRaw+"/"+sMethod+"/Processed.root"); if(!fileInRaw) { return; }
+  TFile* fileInBase = OpenFile(sInFileBase+"/"+sMethod+"/Processed.root"); if(!fileInBase) { return; }
+  TFile* fileInBaseInt = OpenFile(sInFileBaseInt+"/"+sMethod+"/Processed.root"); if(!fileInBaseInt) { return; }
 
+  // cn
+  TH1D* hRaw_cn = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapRaw.Data()),fileInRaw); if(!hRaw_cn) { return; }
+  StyleHist(hRaw_cn, kRed, kOpenSquare);
+  TH1D* hBase_cn = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapBase.Data()),fileInBase); if(!hBase_cn) { return; }
+  StyleHist(hBase_cn, kGreen+2, kFullCircle);
+  TH1D* hBase_cn_int = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapBase.Data()),fileInBaseInt); if(!hBase_cn_int) { return; }
+  StyleHist(hBase_cn_int, kBlue, kFullCircle);
 
+  TH1D* hRaw_cn_scaled = ScaleCn(hRaw_cn,hRaw_Mult);
+  TH1D* hBase_cn_scaled = ScaleCn(hBase_cn,hBase_Mult);
+  TH1D* hBase_cn_int_scaled = ScaleCn(hBase_cn_int,hBase_MultInt);
 
+  // dn
+  TList* list_Raw_dn = new TList();
+  TList* list_Raw_dn_scaled = new TList();
+  TList* list_Base_dn = new TList();
+  TList* list_Base_dn_scaled = new TList();
 
-
-  // SUBTRACTING pPb(cent) - pp (MB / cent)
-
-  // cn{2}^sub = <M>^raw * cn{2}^raw - <M>^base * cn{2}^base
-  // scaling REFS by <M>^2
-  TH1D* hRaw_cn_scaled = (TH1D*) hRaw_cn->Clone(Form("%s_scaled",hRaw_cn->GetName())); if(!hRaw_cn_scaled) { return; }
-  for(Int_t bin(1); bin < hRaw_cn_scaled->GetNbinsX()+1; ++bin)
+  for(Int_t cent(0); cent < iNumCent; ++cent)
   {
-    hRaw_cn_scaled->SetBinContent(bin, hRaw_cn->GetBinContent(bin) * TMath::Power(hRaw_Mult->GetBinContent(bin),2.0) );
+    TH1D* temp = LoadHisto(Form("hCum2_%s_harm2_%s_cent%d",sSpecies.Data(),sGapRaw.Data(),cent),fileInRaw); if(!temp) { return; }
+    StyleHist(temp, kRed, kOpenSquare);
+    list_Raw_dn->Add(temp);
+
+    temp = LoadHisto(Form("hCum2_%s_harm2_%s_cent%d",sSpecies.Data(),sGapBase.Data(),cent),fileInBase); if(!temp) { return; }
+    StyleHist(temp, kGreen+2, kFullCircle);
+    list_Base_dn->Add(temp);
+
+    TH1D* raw_scaled = Scale((TH1D*) list_Raw_dn->At(cent), hRaw_Mult->GetBinContent(cent+1)); if(!raw_scaled) { return; }
+    list_Raw_dn_scaled->Add(raw_scaled);
+
+    TH1D* base_scaled = Scale((TH1D*) list_Base_dn->At(cent), hBase_Mult->GetBinContent(cent+1)); if(!base_scaled) { return; }
+    list_Base_dn_scaled->Add(base_scaled);
   }
 
-  TH1D* hBase_cn_scaled = (TH1D*) hBase_cn->Clone(Form("%s_scaled",hBase_cn->GetName())); if(!hBase_cn_scaled) { return; }
-  for(Int_t bin(1); bin < hBase_cn_scaled->GetNbinsX()+1; ++bin)
-  {
-    hBase_cn_scaled->SetBinContent(bin, hBase_cn->GetBinContent(bin) * TMath::Power(hBase_Mult->GetBinContent(bin),2.0) );
-  }
-
-  TH1D* hBase_cn_int_scaled = (TH1D*) hBase_cn_int->Clone(Form("%s_scaled",hBase_cn_int->GetName())); if(!hBase_cn_int_scaled) { return; }
-  for(Int_t bin(1); bin < hBase_cn_int_scaled->GetNbinsX()+1; ++bin)
-  {
-    hBase_cn_int_scaled->SetBinContent(bin, hBase_cn_int->GetBinContent(bin) * TMath::Power(hBase_MultInt->GetBinContent(bin),2.0) );
-  }
-
-  TH1D* hSub_cn = Subtract(hRaw_cn_scaled, hBase_cn_scaled,1.0); if(!hSub_cn) { return; }
-  TH1D* hSub_cn_int = Subtract(hRaw_cn_scaled, hBase_cn_int_scaled,1.0); if(!hSub_cn_int) { return; }
+  TH1D* hBase_dn_int = LoadHisto(Form("hCum2_%s_harm2_%s_cent0",sSpecies.Data(),sGapBase.Data()),fileInBaseInt); if(!hBase_dn_int) { return; }
+  StyleHist(hBase_dn_int, kBlue, kFullCircle);
+  TH1D* hBase_dn_int_scaled = Scale(hBase_dn_int, hBase_MultInt->GetBinContent(1));
 
   fileOut->cd();
   hRaw_cn->Write("hRaw_cn");
@@ -124,34 +107,21 @@ void Subt_ppb_pp()
   hRaw_cn_scaled->Write("hRaw_cn_scaled");
   hBase_cn_scaled->Write("hBase_cn_scaled");
   hBase_cn_int_scaled->Write("hBase_cn_int_scaled");
-  hSub_cn->Write("hSub_cn");
-  hSub_cn_int->Write("hSub_cn_int");
 
-  // dn{2}^sub = <M>dn{2}^raw - <M>dn{2}^base
-  TH1D* hBase_dn_int_scaled = Scale(hBase_dn_int, hBase_MultInt->GetBinContent(1));
-
-  TList* list_Raw_dn_scaled = new TList();
-  TList* list_Base_dn_scaled = new TList();
-
-  for(Int_t cent(0); cent < iNumCent; ++cent)
-  {
-    TH1D* raw_scaled = Scale((TH1D*) list_Raw_dn->At(cent), hRaw_Mult->GetBinContent(cent+1)); if(!raw_scaled) { return; }
-    list_Raw_dn_scaled->Add(raw_scaled);
-
-    TH1D* base_scaled = Scale((TH1D*) list_Base_dn->At(cent), hBase_Mult->GetBinContent(cent+1)); if(!base_scaled) { return; }
-    list_Base_dn_scaled->Add(base_scaled);
-  }
-
-  fileOut->cd();
   list_Raw_dn->Write("list_Raw_dn",TObject::kSingleKey);
   list_Base_dn->Write("list_Base_dn",TObject::kSingleKey);
-  hBase_dn_int->Write();
+  hBase_dn_int->Write("hBase_dn_int");
   list_Raw_dn_scaled->Write("list_Raw_dn_scaled",TObject::kSingleKey);
   list_Base_dn_scaled->Write("list_Base_dn_scaled",TObject::kSingleKey);
-  hBase_dn_int_scaled->Write();
+  hBase_dn_int_scaled->Write("hBase_dn_int_scaled");
 
+  // === SUBTRACTING pPb(cent) - pp (MB / cent) ===
 
-  // subtracting (scaled) histos
+  // cn{2}^sub = <M>^raw * cn{2}^raw - <M>^base * cn{2}^base
+  TH1D* hSub_cn = Subtract(hRaw_cn_scaled, hBase_cn_scaled,1.0); if(!hSub_cn) { return; }
+  TH1D* hSub_cn_int = Subtract(hRaw_cn_scaled, hBase_cn_int_scaled,1.0); if(!hSub_cn_int) { return; }
+
+  // dn{2}^sub = <M>dn{2}^raw - <M>dn{2}^base
   TList* list_SubPP_dn = new TList();
   TList* list_SubPP_dn_int = new TList();
   for(Int_t centRaw(0); centRaw < iNumCent; ++centRaw)
@@ -198,14 +168,7 @@ void Subt_ppb_pp()
     can->SaveAs(Form("%s/Subt_pp-pbp_cent%d.pdf",sOutFolder.Data(),centRaw),"pdf");
   }
 
-  // Saving to output ROOT file
-  fileOut->cd();
-  list_SubPP_dn->Write("list_SubtPP_Charged_cum_ppcent",TObject::kSingleKey);
-  list_SubPP_dn_int->Write("list_SubtPP_Charged_cum_ppint",TObject::kSingleKey);
-
   // Making vn^sub out of dn^sub / sqrt(cn^sub)
-  // making final vn{2}^{sub} = dn{2}^{sub} / sqrt(cn{2}^{sub})
-
   TList* list_SubPP_vn = new TList();
   TList* list_SubPP_vn_int = new TList();
   for(Int_t centRaw(0); centRaw < iNumCent; ++centRaw)
@@ -239,10 +202,15 @@ void Subt_ppb_pp()
   }
 
   fileOut->cd();
+  hSub_cn->Write("hSub_cn");
+  hSub_cn_int->Write("hSub_cn_int");
+  list_SubPP_dn->Write("list_SubtPP_Charged_cum_ppcent",TObject::kSingleKey);
+  list_SubPP_dn_int->Write("list_SubtPP_Charged_cum_ppint",TObject::kSingleKey);
   list_SubPP_vn->Write("list_SubtPP_Charged_vn_ppcent",TObject::kSingleKey);
   list_SubPP_vn_int->Write("list_SubtPP_Charged_vn_ppint",TObject::kSingleKey);
 
-  // SUBTRACTING pPb(cent) - pPb (peripheral)
+
+  // === SUBTRACTING pPb(cent) - pPb (peripheral) ===
 
   // cn
   TH1D* hSubPPb_cn = (TH1D*) hRaw_cn_scaled->Clone(Form("%s_sub",hRaw_cn_scaled->GetName()));
@@ -255,8 +223,6 @@ void Subt_ppb_pp()
     hSubPPb_cn->SetBinContent(bin, con - base_con);
     hSubPPb_cn->SetBinError(bin,TMath::Sqrt(err*err + base_err*base_err));
   }
-  fileOut->cd();
-  hSubPPb_cn->Write("list_SubtPPb_cn");
 
   TCanvas* can_pPb_ref = new TCanvas("can_pPb_ref","can_pPb_ref",1200,400);
   can_pPb_ref->Divide(3,1);
@@ -299,8 +265,6 @@ void Subt_ppb_pp()
     hSubPPb->Draw("same");
     can_pPb_dn->SaveAs(Form("%s/Subt_ppb_ppb_dn_cent%d.pdf",sOutFolder.Data(),cent),"pdf");
   }
-  fileOut->cd();
-  list_SubtPPb_dn->Write("list_SubtPPb_dn",TObject::kSingleKey);
 
   // vn
   TList* list_SubtPPb_vn = new TList();
@@ -310,9 +274,7 @@ void Subt_ppb_pp()
     hSubPPb_vn->Scale(1.0/TMath::Sqrt(hSubPPb_cn->GetBinContent(cent+1)));
     list_SubtPPb_vn->Add(hSubPPb_vn);
 
-
     TCanvas* can_pPb_vn = new TCanvas("can_pPb_vn","can_pPb_vn",400,400);
-    // canVn->Divide(,1);
     can_pPb_vn->cd();
     TH1* frame_pPb_vn = (TH1*) gPad->DrawFrame(0.,0.,10.,0.2);
     frame_pPb_vn->SetTitle("v_{2}{2}^{sub}; p_{T} (GeV/c)");
@@ -320,6 +282,8 @@ void Subt_ppb_pp()
     can_pPb_vn->SaveAs(Form("%s/Subt_ppb_ppb_vn_cent%d.pdf",sOutFolder.Data(),cent),"pdf");
   }
   fileOut->cd();
+  hSubPPb_cn->Write("list_SubtPPb_cn");
+  list_SubtPPb_dn->Write("list_SubtPPb_dn",TObject::kSingleKey);
   list_SubtPPb_vn->Write("list_SubtPPb_vn",TObject::kSingleKey);
 
   // UNIVERSALL PLOTTING
@@ -427,7 +391,27 @@ TH1D* Scale(TH1D* base, Double_t factor)
 
   return scale;
 }
+// ==================================================================================================================
+TH1D* ScaleCn(TH1D* base, TH1D* mult)
+{
+  if(!base) { printf("ERROR-ScaleCn: Hist 'base' does not found.\n"); return 0x0; }
+  if(!mult) { printf("ERROR-ScaleCn: Hist 'mult' does not found.\n"); return 0x0; }
 
+  TH1D* scaled = (TH1D*) base->Clone(Form("%s_scaled",base->GetName()));
+
+  for(Int_t bin(1); bin < base->GetNbinsX()+1; ++bin)
+  {
+    Double_t con =  base->GetBinContent(bin);
+    Double_t err =  base->GetBinError(bin);
+    Double_t mult_con =  mult->GetBinContent(bin);
+    Double_t mult_err =  mult->GetBinError(bin);
+
+    scaled->SetBinContent(bin, con * mult_con*mult_con );
+    scaled->SetBinError(bin, TMath::Power( mult_con*mult_con*err, 2.0) + TMath::Power(2.0*con*mult_con*mult_err, 2.0));
+  }
+
+  return scaled;
+}
 // ==================================================================================================================
 TH1D* Subtract(TH1D* raw, TH1D* base, Double_t factor)
 {
