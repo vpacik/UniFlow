@@ -9,8 +9,7 @@
 void RunFlowSubMultInt(const char* sOutputFilePath = "")
 {
 	// ##### Parameters setting ######
-	Double_t dEtaGap = 0.0;
-	// Double_t dMultBinning[] = {20,40};
+	Double_t dEtaGap = 0.8;
 	Double_t dMultBinning[] = {0,100};
 	// Double_t dMultBinning[] = {0,20,40,60,100};
 	// Double_t dMultBinning[] = {0.,5.,10.,20.,40.,60.,100.};
@@ -18,15 +17,16 @@ void RunFlowSubMultInt(const char* sOutputFilePath = "")
 
 	// Double_t dPtBinningK0s[] = {3.,5.};
 	// Double_t dPtBinningK0s[] = {0.2,0.4,0.6,0.8,1.,1.2,1.4,1.6,1.8,2.,2.2,2.4,2.6,3.,3.5,4.,5.,6.,7.,8.,10.,20.};
-	Double_t dPtBinningK0s[] = {0.2,0.5,1.,1.5,2.,2.5,3.,3.5,4.,5.,7.,10.,20.};
 	// Double_t dPtBinningK0s[] = {0.2,1.,2.,3.,4.,5.,7.,10.,20.};
+	Double_t dPtBinningK0s[] = {0.2,0.5,1.,1.5,2.,2.5,3.,3.5,4.,5.,7.,10.,20.};
 	// Double_t dPtBinningK0s[] = {0.3,0.5,0.75,1.,1.25,1.5,2.,2.5,3.}; // Run1
-	const char* sInputPath = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run2-gap00";
+	const char* sInputPath = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-gap08";
 
 	// ##### END Parameters setting ######
 
 	// gROOT->AddIncludePath("-I~/NBI/Flow/uniFlow/processUniFlow/");
 	gROOT->LoadMacro("~vpacik/NBI/Flow/uniFlow/processUniFlow/ProcessUniFlow.cpp++g");
+
 
  	FlowTask* taskK0s = new FlowTask(FlowTask::kK0s);
 	taskK0s->SetAlexFitting(kTRUE);
@@ -66,7 +66,6 @@ void RunFlowSubMultInt(const char* sOutputFilePath = "")
 	// taskPhi->SetFittingRange(0.45,0.55);
 	// taskPhi->SetFittingRejectNumSigmas(3);
 	// taskPhi->SetAlternativeProfileName("fp3V0sCorrK0s_<2>_harm2_gap08_Neg");
-
 
 
 	FlowTask* taskRefs = new FlowTask(FlowTask::kRefs);
@@ -117,7 +116,7 @@ void RunFlowSubMultInt(const char* sOutputFilePath = "")
 	process->SetInputFileName("AnalysisResults.root");
 	process->SetTaskName("UniFlow");
 	// process->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process->SetOutputFilePath(Form("%s/output_weighted",sInputPath));
+	process->SetOutputFilePath(Form("%s/output_vn_int/GF_eventweighted",sInputPath));
 	process->SetOutputFileName("Processed.root");
 	process->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
 	process->AddTask(taskRefs);
@@ -136,9 +135,8 @@ void RunFlowSubMultInt(const char* sOutputFilePath = "")
 	process_noweight->SetTaskName("UniFlow");
 	process_noweight->SetGlobalProfNameLabel("multScaled_");
 	// process_noweight->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_noweight->SetOutputFilePath(Form("%s/output_noweight",sInputPath));
+	process_noweight->SetOutputFilePath(Form("%s/output_vn_int/GF_noneventweighted",sInputPath));
 	process_noweight->SetOutputFileName("Processed.root");
-
 	process_noweight->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
 	process_noweight->AddTask(taskRefs);
 	process_noweight->AddTask(taskCharged);
@@ -155,10 +153,10 @@ void RunFlowSubMultInt(const char* sOutputFilePath = "")
 	process_sub->SetInputFileName("AnalysisResults.root");
 	process_sub->SetTaskName("UniFlow_sub");
 	// process_sub->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_sub->SetOutputFilePath(Form("%s/output_sub",sInputPath));
+	process_sub->SetOutputFilePath(Form("%s/output_vn_int/SP_nonscaled_noneventweighted",sInputPath));
 	process_sub->SetOutputFileName("Processed.root");
-	process_sub->SetSaveMult("Mult_int.root");
 	process_sub->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
+	process_sub->SetSaveMult("Mult.root");
 	process_sub->AddTask(taskRefs);
 	process_sub->AddTask(taskCharged);
 	process_sub->AddTask(taskPion);
@@ -175,7 +173,7 @@ void RunFlowSubMultInt(const char* sOutputFilePath = "")
 	process_sub_norm->SetTaskName("UniFlow_sub");
 	process_sub_norm->SetGlobalProfNameLabel("multScaled_");
 	// process_sub_norm->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_sub_norm->SetOutputFilePath(Form("%s/output_sub_norm",sInputPath));
+	process_sub_norm->SetOutputFilePath(Form("%s/output_vn_int/SP_scaled_noneventweighted",sInputPath));
 	process_sub_norm->SetOutputFileName("Processed.root");
 	process_sub_norm->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
 	process_sub_norm->AddTask(taskRefs);
@@ -194,7 +192,7 @@ void RunFlowSubMultInt(const char* sOutputFilePath = "")
 	process_sub_norm_weighted->SetTaskName("UniFlow_sub");
 	process_sub_norm_weighted->SetGlobalProfNameLabel("multScaled_weighted_");
 	// process_sub_norm_weighted->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_sub_norm_weighted->SetOutputFilePath(Form("%s/output_sub_norm_weighted",sInputPath));
+	process_sub_norm_weighted->SetOutputFilePath(Form("%s/output_vn_int/SP_scaled_eventweighted",sInputPath));
 	process_sub_norm_weighted->SetOutputFileName("Processed.root");
 	process_sub_norm_weighted->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
 	process_sub_norm_weighted->AddTask(taskRefs);
