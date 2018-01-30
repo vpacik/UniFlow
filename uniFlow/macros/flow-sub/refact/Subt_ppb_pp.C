@@ -82,7 +82,7 @@ void Subt_ppb_pp()
   TProfile* hBase_MultInt = (TProfile*) LoadHisto("fpRefsMult_rebin",fileInBase_MultInt); if(!hBase_MultInt) { return; }
   Double_t dMult_Base_Int = hBase_MultInt->GetBinContent(1);
 
-  // SUBTRACTION
+  // SUBTRACTING pPb(cent) - pp (MB / cent)
 
   // Working on the c_n{2} Subtraction
   // cn{2}^sub = <M>^raw * cn{2}^raw - <M>^base * cn{2}^base
@@ -345,6 +345,33 @@ void Subt_ppb_pp()
   hSub_Cum_Refs->Draw("same");
   hSub_Cum_Refs_int->Draw("same");
   canRefs->SaveAs(Form("%s/cn_subt.pdf",sOutFolder.Data()),"pdf");
+
+
+  // Comparison of various methods
+  for(Int_t cent(0); cent < iNumCent; ++cent)
+  {
+    TLegend* leg_comp = new TLegend(0.12,0.6,0.4,0.89);
+    leg_comp->SetBorderSize(0);
+    leg_comp->SetFillColor(0);
+    leg_comp->SetFillStyle(0);
+    leg_comp->SetHeader(Form("%s (V0A)", sCentLabel[cent].Data()));
+    TCanvas* can_comp = new TCanvas("can_comp","can_comp",400,400);
+    can_comp->cd();
+    TH1* frame_comp = (TH1*) gPad->DrawFrame(0.,0.,10.,0.2);
+    frame_comp->SetTitle("h^{#pm} v_{2}{2}^{sub}; p_{T} (Gev/c)");
+    ((TH1D*)list_SubtPP_vn_Charged->At(cent))->Draw("same");
+    leg_comp->AddEntry((TH1D*)list_SubtPP_vn_Charged->At(cent),Form("pp (%s)",sCentLabel[cent].Data()),"p");
+    ((TH1D*)list_SubtPP_vn_Charged_int->At(cent))->Draw("same");
+    leg_comp->AddEntry((TH1D*)list_SubtPP_vn_Charged_int->At(cent),"pp (MB)","p");
+    if(cent < 3)
+    {
+      ((TH1D*)list_SubtPPb_Charged_vn->At(cent))->Draw("same");
+      leg_comp->AddEntry((TH1D*)list_SubtPPb_Charged_vn->At(cent),"pPb (60-100%)","p");
+    }
+
+    leg_comp->Draw();
+    can_comp->SaveAs(Form("%s/comp_cent%d.pdf",sOutFolder.Data(),cent),"pdf");
+  }
 
   return;
 }
