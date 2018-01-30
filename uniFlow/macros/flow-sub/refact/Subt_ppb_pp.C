@@ -24,11 +24,14 @@ void Subt_ppb_pp()
   TString sOutputTag = "output_vn";
   TString sOutputTagInt = sOutputTag + "_int";
 
+  TString sGapRaw = "gap00";
+  TString sGapBase = "gap00";
+
   Int_t iCent = 1;
-  TString sInFileRaw = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gap08/" + sOutputTag;
-  TString sInFileBase = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-gap08/" + sOutputTag;
-  TString sInFileBaseInt = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-gap08/" + sOutputTagInt;
-  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb-pp";
+  TString sInFileRaw = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-" + sGapRaw + "/" + sOutputTag;
+  TString sInFileBase = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-" + sGapBase + "/" + sOutputTag;
+  TString sInFileBaseInt = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-" + sGapBase + "/" + sOutputTagInt;
+  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb-pp_gap00";
   TString sOutFile = sOutFolder+"/Subt_results.root";
 
   const Int_t iNumCent = 4;
@@ -45,7 +48,7 @@ void Subt_ppb_pp()
   TFile* fileInBaseInt = OpenFile(sInFileBaseInt+"/"+sMethod+"/Processed.root"); if(!fileInBaseInt) { return; }
   TFile* fileOut = OpenFile(sOutFile,"RECREATE"); if(!fileOut) { return; }
 
-  TH1D* hBase_Cum_Charged_int = LoadHisto("hCum2_Charged_harm2_gap08_cent0",fileInBaseInt); if(!hBase_Cum_Charged_int) { return; }
+  TH1D* hBase_Cum_Charged_int = LoadHisto(Form("hCum2_Charged_harm2_%s_cent0",sGapBase.Data()),fileInBaseInt); if(!hBase_Cum_Charged_int) { return; }
   StyleHist(hBase_Cum_Charged_int, kBlue, kFullCircle);
 
   TList* list_Raw_Cum_Charged = new TList();
@@ -53,22 +56,22 @@ void Subt_ppb_pp()
 
   for(Int_t cent(0); cent < iNumCent; ++cent)
   {
-    TH1D* temp = LoadHisto(Form("hCum2_Charged_harm2_gap08_cent%d",cent),fileInRaw); if(!temp) { return; }
+    TH1D* temp = LoadHisto(Form("hCum2_Charged_harm2_%s_cent%d",sGapRaw.Data(),cent),fileInRaw); if(!temp) { return; }
     StyleHist(temp, kRed, kOpenSquare);
     list_Raw_Cum_Charged->Add(temp);
 
-    temp = LoadHisto(Form("hCum2_Charged_harm2_gap08_cent%d",cent),fileInBase); if(!temp) { return; }
+    temp = LoadHisto(Form("hCum2_Charged_harm2_%s_cent%d",sGapBase.Data(),cent),fileInBase); if(!temp) { return; }
     StyleHist(temp, kGreen+2, kFullCircle);
     list_Base_Cum_Charged->Add(temp);
   }
 
-  TH1D* hRaw_Cum_Refs = LoadHisto("hCum2_Refs_harm2_gap08", fileInRaw); if(!hRaw_Cum_Refs) { return; }
+  TH1D* hRaw_Cum_Refs = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapRaw.Data()), fileInRaw); if(!hRaw_Cum_Refs) { return; }
   StyleHist(hRaw_Cum_Refs, kRed, kOpenSquare);
 
-  TH1D* hBase_Cum_Refs = LoadHisto("hCum2_Refs_harm2_gap08",fileInBase); if(!hBase_Cum_Refs) { return; }
+  TH1D* hBase_Cum_Refs = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapBase.Data()),fileInBase); if(!hBase_Cum_Refs) { return; }
   StyleHist(hBase_Cum_Refs, kGreen+2, kFullCircle);
 
-  TH1D* hBase_Cum_Refs_int = LoadHisto("hCum2_Refs_harm2_gap08",fileInBaseInt); if(!hBase_Cum_Refs_int) { return; }
+  TH1D* hBase_Cum_Refs_int = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapBase.Data()),fileInBaseInt); if(!hBase_Cum_Refs_int) { return; }
   StyleHist(hBase_Cum_Refs_int, kBlue, kFullCircle);
 
   // multiplicities
@@ -84,9 +87,7 @@ void Subt_ppb_pp()
 
   // SUBTRACTING pPb(cent) - pp (MB / cent)
 
-  // Working on the c_n{2} Subtraction
   // cn{2}^sub = <M>^raw * cn{2}^raw - <M>^base * cn{2}^base
-
   // scaling REFS by <M>^2
   TH1D* hRaw_Cum_Refs_scaled = (TH1D*) hRaw_Cum_Refs->Clone(Form("%s_scaled",hRaw_Cum_Refs->GetName())); if(!hRaw_Cum_Refs_scaled) { return; }
   for(Int_t bin(1); bin < hRaw_Cum_Refs_scaled->GetNbinsX()+1; ++bin)
@@ -120,7 +121,6 @@ void Subt_ppb_pp()
   hSub_Cum_Refs_int->Write("hSub_Cum_Refs_int");
 
   // dn{2}^sub = <M>dn{2}^raw - <M>dn{2}^base
-  // scaling base with pre-factor
   TH1D* hBase_Cum_Charged_int_scaled = Scale(hBase_Cum_Charged_int, hBase_MultInt->GetBinContent(1));
 
   TList* list_Raw_Cum_Charged_scaled = new TList();
