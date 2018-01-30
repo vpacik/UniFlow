@@ -20,18 +20,18 @@ Color_t colors[] = {kGreen+2, kBlue, kBlack, kMagenta+1};
 
 void Subt_ppb_pp()
 {
+  TString sSpecies = "Charged";
   TString sMethod = "GF_eventweighted";
   TString sOutputTag = "output_vn";
   TString sOutputTagInt = sOutputTag + "_int";
 
-  TString sGapRaw = "gap00";
-  TString sGapBase = "gap00";
+  TString sGapRaw = "gap08";
+  TString sGapBase = "gap08";
 
-  Int_t iCent = 1;
   TString sInFileRaw = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-" + sGapRaw + "/" + sOutputTag;
   TString sInFileBase = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-" + sGapBase + "/" + sOutputTag;
   TString sInFileBaseInt = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-" + sGapBase + "/" + sOutputTagInt;
-  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb-pp_gap00";
+  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb-pp_test";
   TString sOutFile = sOutFolder+"/Subt_results.root";
 
   const Int_t iNumCent = 4;
@@ -48,7 +48,7 @@ void Subt_ppb_pp()
   TFile* fileInBaseInt = OpenFile(sInFileBaseInt+"/"+sMethod+"/Processed.root"); if(!fileInBaseInt) { return; }
   TFile* fileOut = OpenFile(sOutFile,"RECREATE"); if(!fileOut) { return; }
 
-  TH1D* hBase_Cum_Charged_int = LoadHisto(Form("hCum2_Charged_harm2_%s_cent0",sGapBase.Data()),fileInBaseInt); if(!hBase_Cum_Charged_int) { return; }
+  TH1D* hBase_Cum_Charged_int = LoadHisto(Form("hCum2_%s_harm2_%s_cent0",sSpecies.Data(),sGapBase.Data()),fileInBaseInt); if(!hBase_Cum_Charged_int) { return; }
   StyleHist(hBase_Cum_Charged_int, kBlue, kFullCircle);
 
   TList* list_Raw_Cum_Charged = new TList();
@@ -56,16 +56,16 @@ void Subt_ppb_pp()
 
   for(Int_t cent(0); cent < iNumCent; ++cent)
   {
-    TH1D* temp = LoadHisto(Form("hCum2_Charged_harm2_%s_cent%d",sGapRaw.Data(),cent),fileInRaw); if(!temp) { return; }
+    TH1D* temp = LoadHisto(Form("hCum2_%s_harm2_%s_cent%d",sSpecies.Data(),sGapRaw.Data(),cent),fileInRaw); if(!temp) { return; }
     StyleHist(temp, kRed, kOpenSquare);
     list_Raw_Cum_Charged->Add(temp);
 
-    temp = LoadHisto(Form("hCum2_Charged_harm2_%s_cent%d",sGapBase.Data(),cent),fileInBase); if(!temp) { return; }
+    temp = LoadHisto(Form("hCum2_%s_harm2_%s_cent%d",sSpecies.Data(),sGapBase.Data(),cent),fileInBase); if(!temp) { return; }
     StyleHist(temp, kGreen+2, kFullCircle);
     list_Base_Cum_Charged->Add(temp);
   }
 
-  TH1D* hRaw_Cum_Refs = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapRaw.Data()), fileInRaw); if(!hRaw_Cum_Refs) { return; }
+  TH1D* hRaw_Cum_Refs = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapRaw.Data()),fileInRaw); if(!hRaw_Cum_Refs) { return; }
   StyleHist(hRaw_Cum_Refs, kRed, kOpenSquare);
 
   TH1D* hBase_Cum_Refs = LoadHisto(Form("hCum2_Refs_harm2_%s",sGapBase.Data()),fileInBase); if(!hBase_Cum_Refs) { return; }
