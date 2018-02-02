@@ -32,7 +32,7 @@ void Subt_ppb_pp()
   TString sInFileRaw = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-" + sGapRaw + "/" + sOutputTag;
   TString sInFileBase = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-" + sGapBase + "/" + sOutputTag;
   TString sInFileBaseInt = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-" + sGapBase + "/" + sOutputTagInt;
-  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb-pp_test";
+  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb-pp_test/"+sSpecies;
   TString sOutFile = sOutFolder+"/Subt_results.root";
 
   const Int_t iNumCent = 4;
@@ -204,10 +204,10 @@ void Subt_ppb_pp()
   fileOut->cd();
   hSub_cn->Write("hSub_cn");
   hSub_cn_int->Write("hSub_cn_int");
-  list_SubPP_dn->Write("list_SubtPP_Charged_cum_ppcent",TObject::kSingleKey);
-  list_SubPP_dn_int->Write("list_SubtPP_Charged_cum_ppint",TObject::kSingleKey);
-  list_SubPP_vn->Write("list_SubtPP_Charged_vn_ppcent",TObject::kSingleKey);
-  list_SubPP_vn_int->Write("list_SubtPP_Charged_vn_ppint",TObject::kSingleKey);
+  list_SubPP_dn->Write("list_SubtPP_dn_ppcent",TObject::kSingleKey);
+  list_SubPP_dn_int->Write("list_SubtPP_dn_ppint",TObject::kSingleKey);
+  list_SubPP_vn->Write("list_SubtPP_vn_ppcent",TObject::kSingleKey);
+  list_SubPP_vn_int->Write("list_SubtPP_vn_ppint",TObject::kSingleKey);
 
 
   // === SUBTRACTING pPb(cent) - pPb (peripheral) ===
