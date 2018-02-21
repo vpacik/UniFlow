@@ -22,7 +22,7 @@ Color_t colors[] = {kGreen+2, kBlue, kBlack, kMagenta+1};
 void Subt_ppb_pp()
 {
   TString sSpecies = "Charged";
-  TString sMethod = "GF_eventweighted";
+  TString sMethod = "SP_scaled_eventweighted";
   TString sOutputTag = "output_vn";
   TString sOutputTagInt = sOutputTag + "_int";
 
@@ -32,7 +32,7 @@ void Subt_ppb_pp()
   TString sInFileRaw = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-" + sGapRaw + "/" + sOutputTag;
   TString sInFileBase = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-" + sGapBase + "/" + sOutputTag;
   TString sInFileBaseInt = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-" + sGapBase + "/" + sOutputTagInt;
-  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb-pp_test/"+sSpecies;
+  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb08_pp08_subt/"+sSpecies;
   TString sOutFile = sOutFolder+"/Subt_results.root";
 
   const Int_t iNumCent = 4;
@@ -78,6 +78,7 @@ void Subt_ppb_pp()
   TList* list_Raw_dn_scaled = new TList();
   TList* list_Base_dn = new TList();
   TList* list_Base_dn_scaled = new TList();
+
 
   for(Int_t cent(0); cent < iNumCent; ++cent)
   {
@@ -134,38 +135,6 @@ void Subt_ppb_pp()
     // subtracting (int) pp
     TH1D* hSubPP_dn_int = Subtract(temp_raw_cent, hBase_dn_int_scaled);
     list_SubPP_dn_int->Add(hSubPP_dn_int);
-
-    TLegend* leg = new TLegend(0.12,0.5,0.6,0.89);
-    leg->SetBorderSize(0.);
-    leg->SetFillColor(0);
-    leg->AddEntry(temp_raw_cent,Form("Unsub pPb (%s)",sCentLabel[centRaw].Data()),"p");
-    leg->AddEntry(hBase_dn_int,"pp (0-100%)","p");
-    leg->AddEntry(hSubPP_dn,Form("pp (%s)",sCentLabel[centRaw].Data()),"p");
-
-    TCanvas* can = new TCanvas("can","can",1200,400);
-    can->Divide(3,1);
-    can->cd(1);
-    TH1* frame = gPad->DrawFrame(0,0,10,0.2);
-    frame->SetTitle("raw <<2'>>; p_{T} (GeV/c)");
-    ((TH1D*) list_Raw_dn->At(centRaw))->Draw("same");
-    hBase_dn_int->Draw("same");
-    ((TH1D*) list_Base_dn->At(centRaw))->Draw("same");
-    leg->Draw();
-
-    can->cd(2);
-    TH1* frame2 = gPad->DrawFrame(0,-0.03,10,1.0);
-    frame2->SetTitle("<M> * <<2'>>; p_{T} (GeV/c)");
-    temp_raw_cent->Draw("same");
-    hBase_dn_int_scaled->Draw("same");
-    ((TH1D*) list_Base_dn_scaled->At(centRaw))->Draw("same");
-
-    can->cd(3);
-    TH1* frame3 = gPad->DrawFrame(0,-0.3,10,0.5);
-    frame3->SetTitle("<M>^{pPb}<<2'>>^{pPb} - <M>^{pp}<<2'>>^{pp}; p_{T} (GeV/c)");
-    hSubPP_dn_int->Draw("same");
-    hSubPP_dn->Draw("same");
-
-    can->SaveAs(Form("%s/Subt_pp-pbp_cent%d.pdf",sOutFolder.Data(),centRaw),"pdf");
   }
 
   // Making vn^sub out of dn^sub / sqrt(cn^sub)
@@ -179,25 +148,15 @@ void Subt_ppb_pp()
     TH1D* hSubPP_vn = (TH1D*) hSub_dn->Clone(Form("%s_vn", hSub_dn->GetName())); if(!hSubPP_vn) { return; }
     StyleHist(hSubPP_vn, kGreen+2, kFullCircle);
     hSubPP_vn->Scale(1.0/TMath::Sqrt(hSub_cn->GetBinContent(centRaw+1)));
+    hSubPP_vn->SetName(Form("hSubPP_vn_cent%d",centRaw));
     list_SubPP_vn->Add(hSubPP_vn);
 
     // dividing by cn{2}^sub (int)
     TH1D* hSubPP_vn_int = (TH1D*) hSub_dn->Clone(Form("%s_vn_int", hSub_dn->GetName())); if(!hSubPP_vn_int) { return; }
     StyleHist(hSubPP_vn_int, kBlue, kFullCircle);
     hSubPP_vn_int->Scale(1.0/TMath::Sqrt(hSub_cn_int->GetBinContent(1)));
+    hSubPP_vn_int->SetName(Form("hSubPP_vn_int_cent%d",centRaw));
     list_SubPP_vn_int->Add(hSubPP_vn_int);
-
-    TCanvas* canVn = new TCanvas("canVn","canVn",400,400);
-    // canVn->Divide(,1);
-    canVn->cd(1);
-    TH1* frame_vn = (TH1*) gPad->DrawFrame(0.,0.,10.,0.2);
-    frame_vn->SetTitle("sub vn{2}; p_{T} (GeV/c)");
-    hSubPP_vn->Draw("same");
-    hSubPP_vn_int->Draw("same");
-    // canVn->cd(2);
-    // canVn->cd(3);
-
-    canVn->SaveAs(Form("%s/Subt_ppb_pp_vn_cent%d.pdf",sOutFolder.Data(),centRaw),"pdf");
 
   }
 
@@ -283,6 +242,7 @@ void Subt_ppb_pp()
   }
   fileOut->cd();
   hSubPPb_cn->Write("list_SubtPPb_cn");
+  // StyleHist(hSubPPb,kRed, kFullCircle);
   list_SubtPPb_dn->Write("list_SubtPPb_dn",TObject::kSingleKey);
   list_SubtPPb_vn->Write("list_SubtPPb_vn",TObject::kSingleKey);
 
@@ -291,7 +251,7 @@ void Subt_ppb_pp()
   TLegend* leg_Refs = new TLegend(0.12,0.12,0.6,0.3);
   leg_Refs->SetBorderSize(0.);
   leg_Refs->SetFillColor(0);
-  leg_Refs->AddEntry(hRaw_cn,"Unsub pPb","p");
+  leg_Refs->AddEntry(hRaw_cn,"pPb","p");
   leg_Refs->AddEntry(hBase_cn,"pp ","p");
   leg_Refs->AddEntry(hBase_cn_int,"pp (0-100%)","p");
 
@@ -315,21 +275,108 @@ void Subt_ppb_pp()
   frame_Ref_3->SetTitle("<M>^{raw,2} <<2>> - <M>^{base,2}<<2>>; cent %");
   hSub_cn->Draw("same");
   hSub_cn_int->Draw("same");
+  hSubPPb_cn->Draw("same");
   canRefs->SaveAs(Form("%s/cn_subt.pdf",sOutFolder.Data()),"pdf");
 
+  for(Int_t centRaw(0); centRaw < iNumCent; ++centRaw)
+  {
+    TH1D* temp_raw_cent = (TH1D*) list_Raw_dn_scaled->At(centRaw);
+    TH1D* hSubPP_dn = (TH1D*) list_SubPP_dn->At(centRaw);
+    TH1D* hSubPP_dn_int = (TH1D*) list_SubPP_dn_int->At(centRaw);
+    TH1D* hRaw_dn_peri = (TH1D*) list_Raw_dn->At(3);
+    StyleHist(hRaw_dn_peri,kRed,kFullCircle);
+    TH1D* hRaw_dn_peri_scaled = (TH1D*) list_Raw_dn_scaled->At(3);
+    StyleHist(hRaw_dn_peri_scaled,kRed,kFullCircle);
+    TH1D* hSubPpb_vn = ((TH1D*) list_SubtPPb_dn->At(centRaw));
+    StyleHist(hSubPpb_vn,kRed,kFullCircle);
+
+
+    TLegend* leg = new TLegend(0.12,0.5,0.6,0.89);
+    leg->SetBorderSize(0.);
+    leg->SetFillColor(0);
+    leg->AddEntry(temp_raw_cent,Form("pPb (unsub, %s)",sCentLabel[centRaw].Data()),"p");
+    leg->AddEntry(hRaw_dn_peri,Form("pPb (%s)",sCentLabel[3].Data()),"p");
+    leg->AddEntry(hSubPP_dn,Form("pp (%s)",sCentLabel[centRaw].Data()),"p");
+    leg->AddEntry(hBase_dn_int,"pp (0-100%)","p");
+
+    TCanvas* can = new TCanvas("can","can",1200,400);
+    can->Divide(3,1);
+    can->cd(1);
+    TH1* frame = gPad->DrawFrame(0,0,10,0.2);
+    frame->SetTitle("raw <<2'>>; p_{T} (GeV/c)");
+    ((TH1D*) list_Raw_dn->At(centRaw))->Draw("same");
+    hBase_dn_int->Draw("same");
+    ((TH1D*) list_Base_dn->At(centRaw))->Draw("same");
+    hRaw_dn_peri->Draw("same");
+    leg->Draw();
+
+    can->cd(2);
+    TH1* frame2 = gPad->DrawFrame(0,-0.03,10,1.0);
+    frame2->SetTitle("<M> * <<2'>>; p_{T} (GeV/c)");
+    temp_raw_cent->Draw("same");
+    hBase_dn_int_scaled->Draw("same");
+    ((TH1D*) list_Base_dn_scaled->At(centRaw))->Draw("same");
+    hRaw_dn_peri_scaled->Draw("same");
+
+    can->cd(3);
+    TH1* frame3 = gPad->DrawFrame(0,-0.05,10,1.0);
+    frame3->SetTitle("<M>^{pPb}<<2'>>^{pPb} - <M>^{pp}<<2'>>^{pp}; p_{T} (GeV/c)");
+    hSubPP_dn_int->Draw("same");
+    hSubPP_dn->Draw("same");
+    hSubPpb_vn->Draw("same");
+
+
+    can->SaveAs(Form("%s/Subt_pp-pbp_cent%d.pdf",sOutFolder.Data(),centRaw),"pdf");
+  }
+  for(Int_t centRaw(0); centRaw < iNumCent; ++centRaw)
+  {
+    TH1D* hSubPP_vn = (TH1D*) list_SubPP_vn->At(centRaw);
+    TH1D* hSubPP_vn_int = (TH1D*) list_SubPP_vn_int->At(centRaw);
+    TH1D* hSubPPb_vn = (TH1D*) list_SubtPPb_vn->At(centRaw);
+    StyleHist(hSubPPb_vn, kRed, kFullCircle);
+
+    TLegend* leg = new TLegend(0.12,0.65,0.6,0.89);
+    leg->SetBorderSize(0.);
+    leg->SetFillColor(0);
+    if(centRaw < 3) leg->AddEntry(hSubPPb_vn,Form("pPb (%s)",sCentLabel[3].Data()),"p");
+    leg->AddEntry(hSubPP_vn,Form("pp (%s)",sCentLabel[centRaw].Data()),"p");
+    leg->AddEntry(hSubPP_vn_int,"pp (0-100%)","p");
+
+    TCanvas* canVn = new TCanvas("canVn","canVn",400,400);
+    // canVn->Divide(,1);
+    canVn->cd(1);
+    TH1* frame_vn = (TH1*) gPad->DrawFrame(0.,-0.05,10.,0.3);
+    frame_vn->SetTitle(Form("v_{2}{2}^{sub} (%s V0A); p_{T} (GeV/c)",sCentLabel[centRaw].Data()));
+    hSubPP_vn->Draw("same");
+    hSubPP_vn_int->Draw("same");
+    if(hSubPPb_vn) hSubPPb_vn->Draw("same");
+    // canVn->cd(2);
+    // canVn->cd(3);
+    leg->Draw();
+
+    canVn->SaveAs(Form("%s/Subt_ppb_pp_vn_cent%d.pdf",sOutFolder.Data(),centRaw),"pdf");
+  }
 
   // Comparison of various methods
   for(Int_t cent(0); cent < iNumCent; ++cent)
   {
+
+    TH1D* hRaw_vn = LoadHisto(Form("hFlow2_%s_harm2_%s_cent%d",sSpecies.Data(),sGapRaw.Data(),cent),fileInRaw); if(!hRaw_vn) { return; }
+    StyleHist(hRaw_vn,kBlack, kOpenSquare);
+    // hRaw_vn->SetLineWidth(2);
+
+
     TLegend* leg_comp = new TLegend(0.12,0.6,0.4,0.89);
     leg_comp->SetBorderSize(0);
     leg_comp->SetFillColor(0);
     leg_comp->SetFillStyle(0);
     leg_comp->SetHeader(Form("%s (V0A)", sCentLabel[cent].Data()));
+    leg_comp->AddEntry(hRaw_vn,"Unsubt pPb","p");
     TCanvas* can_comp = new TCanvas("can_comp","can_comp",400,400);
     can_comp->cd();
-    TH1* frame_comp = (TH1*) gPad->DrawFrame(0.,0.,10.,0.2);
+    TH1* frame_comp = (TH1*) gPad->DrawFrame(0.,0.,10.,0.5);
     frame_comp->SetTitle("h^{#pm} v_{2}{2}^{sub}; p_{T} (Gev/c)");
+    hRaw_vn->Draw("same");
     ((TH1D*)list_SubPP_vn->At(cent))->Draw("same");
     leg_comp->AddEntry((TH1D*)list_SubPP_vn->At(cent),Form("pp (%s)",sCentLabel[cent].Data()),"p");
     ((TH1D*)list_SubPP_vn_int->At(cent))->Draw("same");
@@ -339,6 +386,8 @@ void Subt_ppb_pp()
       ((TH1D*)list_SubtPPb_vn->At(cent))->Draw("same");
       leg_comp->AddEntry((TH1D*)list_SubtPPb_vn->At(cent),"pPb (60-100%)","p");
     }
+
+
 
     leg_comp->Draw();
     can_comp->SaveAs(Form("%s/comp_cent%d.pdf",sOutFolder.Data(),cent),"pdf");
