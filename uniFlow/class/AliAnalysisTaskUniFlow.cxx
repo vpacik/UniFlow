@@ -5126,7 +5126,7 @@ Short_t AliAnalysisTaskUniFlow::GetCentralityIndex()
   // assigning centrality based on number of selected charged tracks
   if( fMultEstimator.EqualTo("") || fMultEstimator.EqualTo("CHARGED") )
   {
-    iCentralityIndex = fVectorCharged->size();
+    iCentralityIndex = fVectorRefs->size();
   }
   else if(
     // some of supported AliMultSelection estimators
