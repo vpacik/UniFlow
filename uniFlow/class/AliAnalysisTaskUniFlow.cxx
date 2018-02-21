@@ -3791,12 +3791,25 @@ Bool_t AliAnalysisTaskUniFlow::ProcessEvent()
   // Selection of relevant particles (pushing into corresponding vectors)
   Filtering();
 
+
+  // pre-select V0A centrality (cental) events
+  // TODO
+  // checking AliMultSelection
+
+  AliMultSelection* multSelection = (AliMultSelection*) fEventAOD->FindListObject("MultSelection");
+  if(!multSelection) { AliError("AliMultSelection object not found! Returning -1"); return -1; }
+
+  Float_t dPercentile = multSelection->GetMultiplicityPercentile("V0A");
+  if(dPercentile < 0.0 || dPercentile > 20.0) return kFALSE;
+
+
   // estimate centrality & assign indexes (centrality/percentile, sampling, ...)
   fIndexCentrality = GetCentralityIndex();
   if(fIndexCentrality < 0) return kFALSE;
 
   fhEventCentrality->Fill(fIndexCentrality);
-  fh2EventCentralityNumSelCharged->Fill(fVectorCharged->size(),fIndexCentrality);
+  fh2EventCentralityNumSelCharged->Fill(fVectorRefs->size(),dPercentile);
+  // fh2EventCentralityNumSelCharged->Fill(fVectorCharged->size(),fIndexCentrality);
   // at this point, centrality index (percentile) should be properly estimated, if not, skip event
 
   // if running in kFillWeights mode, skip the remaining part
