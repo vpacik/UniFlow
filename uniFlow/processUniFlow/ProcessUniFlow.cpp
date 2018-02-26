@@ -254,7 +254,7 @@ class ProcessUniFlow
     void        Info(TString sMsg, TString sMethod = ""); // printf the msg as info
     void        Debug(TString sMsg, TString sMethod = ""); // printf the msg as info
 
-    static const Short_t fiNumMultBinsGlobal = 20; // global initialization number of bins
+    static const Short_t fiNumMultBinsGlobal = 200; // global initialization number of bins
     Double_t    fdMultBins[fiNumMultBinsGlobal]; // global multiplicity/centrality binning
     Short_t     fiNumMultBins; // number of multiplicity bins (not size of array)
 
