@@ -22,17 +22,17 @@ Color_t colors[] = {kGreen+2, kBlue, kBlack, kMagenta+1};
 void Subt_ppb_pp()
 {
   TString sSpecies = "Charged";
-  TString sMethod = "SP_scaled_eventweighted";
+  TString sMethod = "GF_eventweighted";
   TString sOutputTag = "output_vn";
   TString sOutputTagInt = sOutputTag + "_int";
 
-  TString sGapRaw = "gap08";
-  TString sGapBase = "gap08";
+  TString sGapRaw = "gap12";
+  TString sGapBase = "gap12";
 
-  TString sInFileRaw = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-" + sGapRaw + "/" + sOutputTag;
-  TString sInFileBase = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-" + sGapBase + "/" + sOutputTag;
-  TString sInFileBaseInt = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-2-" + sGapBase + "/" + sOutputTagInt;
-  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb08_pp08_subt/"+sSpecies;
+  TString sInFileRaw = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gaps-04-06-10-12/" + sOutputTag + "/" + sGapRaw;
+  TString sInFileBase = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-gaps-04-06-10-12/" + sOutputTag + "/" + sGapBase;
+  TString sInFileBaseInt = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-gaps-04-06-10-12/" + sOutputTagInt + "/" + sGapBase;
+  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb_pp_subt_"+sGapRaw+"/"+sSpecies;
   TString sOutFile = sOutFolder+"/Subt_results.root";
 
   const Int_t iNumCent = 4;
