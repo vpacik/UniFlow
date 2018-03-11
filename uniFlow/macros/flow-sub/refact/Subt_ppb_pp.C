@@ -19,24 +19,25 @@ TH1D* Subtract(TH1D* raw, TH1D* base, Double_t factor = 1.0);
 Color_t colors[] = {kGreen+2, kBlue, kBlack, kMagenta+1};
 
 
-void Subt_ppb_pp()
+void Subt_ppb_pp(TString sGap)
 {
   TString sSpecies = "Charged";
   TString sMethod = "GF_eventweighted";
-  TString sOutputTag = "output_vn";
-  TString sOutputTagInt = sOutputTag + "_int";
+  // TString sOutputTag = "output_vn";
+  // TString sOutputTagInt = sOutputTag + "_int";
 
-  TString sGapRaw = "gap12";
-  TString sGapBase = "gap12";
+  TString sGapBase = sGap;
+  TString sGapRaw = sGapBase;
 
-  TString sInFileRaw = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gaps-04-06-10-12/" + sOutputTag + "/" + sGapRaw;
-  TString sInFileBase = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-gaps-04-06-10-12/" + sOutputTag + "/" + sGapBase;
-  TString sInFileBaseInt = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pp-run3-gaps-04-06-10-12/" + sOutputTagInt + "/" + sGapBase;
-  TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb_pp_subt_"+sGapRaw+"/"+sSpecies;
+  TString sInFileRaw = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/output_0510/pPb/" + sGapBase; // + "/" + sMethod;
+  TString sInFileBase = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/output_0510/pp/" + sGapBase; // + "/"; + sMethod;
+  TString sInFileBaseInt = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/output_int/pp/" + sGapBase; // + "/"; + sMethod;
+  // TString sOutFolder = sInFileRaw+"/"+sMethod+"/pPb_pp_subt_"+sGapRaw+"/"+sSpecies;
+  TString sOutFolder = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/output_0510/subt/"+sGapBase+"/"+sMethod+"/"+sSpecies;
   TString sOutFile = sOutFolder+"/Subt_results.root";
 
   const Int_t iNumCent = 4;
-  TString sCentLabel[iNumCent] = {"0-20%", "20-40%", "40-60%", "60-100%"};
+  TString sCentLabel[iNumCent] = {"0-5%", "5-10%", "10-60%", "60-100%"};
 
   // ==================================================================================================================
 

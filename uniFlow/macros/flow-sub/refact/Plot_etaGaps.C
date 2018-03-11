@@ -20,7 +20,9 @@ Color_t colors[] = {kRed, kGreen+2, kBlue, kMagenta+1};
 
 void Plot_etaGaps()
 {
-  TString sCentLabel[] = {"0-20%", "20-40%", "40-60%", "60-100%"};
+  // TString sCentLabel[] = {"0-20%", "20-40%", "40-60%", "60-100%"};
+  // TString sCentLabel[] = {"0-10%", "10-20%", "20-60%", "60-100%"};
+  TString sCentLabel[] = {"0-5%", "5-10%", "10-60%", "60-100%"};
   TString sSpecies = "Charged";
   TString sMethod = "GF_eventweighted";
   TString sOutputTag = "output_vn";
@@ -31,18 +33,19 @@ void Plot_etaGaps()
   // TString sListName = "list_SubtPP_vn_ppint"; TString sHistName = "hSubPP_vn_int_cent"; TString sListHeader = "pPb - pp (MB)"; Int_t iNumCent = 4;
   TString sListName = "list_SubtPPb_vn"; TString sHistName = "hSubPPb_vn_cent"; TString sListHeader = "pPb - pPb (60-100%)"; Int_t iNumCent = 3;
 
+  TString sInputFolder = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/output_0510/subt/";
 
-  TString sOutputFolder = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etagap_3/";
+  TString sOutputFolder = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/output_0510/comp-etagap/";
 
   const Int_t iNumFiles = 7;
   TString sFiles[iNumFiles] = {
-    "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gap00/" + sOutputTag + "/" + sMethod + "/pPb00_pp00_subt/" + sSpecies + "/" + sFileName,
-    "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gap02/" + sOutputTag + "/" + sMethod + "/pPb02_pp02_subt/" + sSpecies + "/" + sFileName,
-    "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gaps-04-06-10-12/" + sOutputTag + "/gap04/" + sMethod + "/pPb_pp_subt_gap04/" + sSpecies + "/" + sFileName,
-    "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gaps-04-06-10-12/" + sOutputTag + "/gap06/" + sMethod + "/pPb_pp_subt_gap06/" + sSpecies + "/" + sFileName,
-    "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gap08/" + sOutputTag + "/" + sMethod + "/pPb08_pp08_subt/" + sSpecies + "/" + sFileName,
-    "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gaps-04-06-10-12/" + sOutputTag + "/gap10/" + sMethod + "/pPb_pp_subt_gap10/" + sSpecies + "/" + sFileName,
-    "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gaps-04-06-10-12/" + sOutputTag + "/gap12/" + sMethod + "/pPb_pp_subt_gap12/" + sSpecies + "/" + sFileName
+    sInputFolder+"gap00/"+sMethod+"/"+sSpecies+"/"+sFileName,
+    sInputFolder+"gap02/"+sMethod+"/"+sSpecies+"/"+sFileName,
+    sInputFolder+"gap04/"+sMethod+"/"+sSpecies+"/"+sFileName,
+    sInputFolder+"gap06/"+sMethod+"/"+sSpecies+"/"+sFileName,
+    sInputFolder+"gap08/"+sMethod+"/"+sSpecies+"/"+sFileName,
+    sInputFolder+"gap10/"+sMethod+"/"+sSpecies+"/"+sFileName,
+    sInputFolder+"gap12/"+sMethod+"/"+sSpecies+"/"+sFileName
   };
 
   TString sFileLabel[iNumFiles] = {

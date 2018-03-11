@@ -6,14 +6,22 @@
  * Author: Vojtech Pacik (vojtech.pacik@cern.ch), NBI, 2017
  */
 
-void RunFlowSub(const char* sOutputFilePath = "")
+void RunFlowSub()
 {
 	// ##### Parameters setting ######
-	Double_t dEtaGap = 0.4;
-	TString sEtaGap = "04";
+	// Double_t dEtaGap = 0.0;	TString sEtaGap = "gap00";
+	// Double_t dEtaGap = 0.2;	TString sEtaGap = "gap02";
+	// Double_t dEtaGap = 0.8;	TString sEtaGap = "gap08";
+
+	Double_t dEtaGap = 0.4;	TString sEtaGap = "gap04";
+	// Double_t dEtaGap = 0.6;	TString sEtaGap = "gap06";
+	// Double_t dEtaGap = 1.0;	TString sEtaGap = "gap10";
+	// Double_t dEtaGap = 1.2;	TString sEtaGap = "gap12";
+
 	// Double_t dMultBinning[] = {0,100};
-	Double_t dMultBinning[] = {0,10,20};
-	// Double_t dMultBinning[] = {0,10,20,40,60,100};
+	// Double_t dMultBinning[] = {0,20,40,60,100};
+	// Double_t dMultBinning[] = {0,10,20,60,100};
+	Double_t dMultBinning[] = {0,5,10,60,100};
 	// Double_t dMultBinning[] = {0.,5.,10.,20.,40.,60.,100.};
 
 	// N_RFPs multiplicity
@@ -34,7 +42,13 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	Double_t dPtBinningK0s[] = {0.2,0.5,1.,1.5,2.,2.5,3.,3.5,4.,5.,7.,10.,20.};
 	// Double_t dPtBinningK0s[] = {0.0,2.0,4.0,6.0,8.0,10.0}; // large bins
 	// Double_t dPtBinningK0s[] = {0.3,0.5,0.75,1.,1.25,1.5,2.,2.5,3.}; // Run1
-	const char* sInputPath = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-run3-gaps-04-06-10-12";
+	TString sInputPath = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/pp-run3-gaps-04-06-10-12";
+	// TString sInputPath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/pPb-run3-%s",sEtaGap.Data());
+
+	// TString sOutputFilePath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/output_int/pp/%s",sEtaGap.Data());
+	// TString sOutputFilePath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/output_stdbins/pp/%s",sEtaGap.Data());
+	TString sOutputFilePath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/output_0510/pp/%s",sEtaGap.Data());
+	// TString sOutputFilePath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/etegap-dependence/output_0510/pp/%s",sEtaGap.Data());
 
 	// ##### END Parameters setting ######
 
@@ -126,11 +140,11 @@ void RunFlowSub(const char* sOutputFilePath = "")
 
 
 	ProcessUniFlow* process = new ProcessUniFlow();
-	process->SetInputFilePath(sInputPath);
+	process->SetInputFilePath(sInputPath.Data());
 	process->SetInputFileName("AnalysisResults.root");
 	process->SetTaskName("UniFlow");
 	// process->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process->SetOutputFilePath(Form("%s/output_vn_centbins/%s/GF_eventweighted",sInputPath,sEtaGap.Data()));
+	process->SetOutputFilePath(Form("%s/GF_eventweighted",sOutputFilePath.Data()));
 	process->SetOutputFileName("Processed.root");
 	process->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
 	process->AddTask(taskRefs);
@@ -144,12 +158,12 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process->Run();
 
 	ProcessUniFlow* process_noweight = new ProcessUniFlow();
-	process_noweight->SetInputFilePath(sInputPath);
+	process_noweight->SetInputFilePath(sInputPath.Data());
 	process_noweight->SetInputFileName("AnalysisResults.root");
 	process_noweight->SetTaskName("UniFlow");
 	process_noweight->SetGlobalProfNameLabel("multScaled_");
 	// process_noweight->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_noweight->SetOutputFilePath(Form("%s/output_vn_centbins/%s/GF_noneventweighted",sInputPath,sEtaGap.Data()));
+	process_noweight->SetOutputFilePath(Form("%s/GF_noneventweighted",sOutputFilePath.Data()));
 	process_noweight->SetOutputFileName("Processed.root");
 	process_noweight->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
 	process_noweight->AddTask(taskRefs);
@@ -163,11 +177,11 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_noweight->Run();
 
 	ProcessUniFlow* process_sub = new ProcessUniFlow();
-	process_sub->SetInputFilePath(sInputPath);
+	process_sub->SetInputFilePath(sInputPath.Data());
 	process_sub->SetInputFileName("AnalysisResults.root");
 	process_sub->SetTaskName("UniFlow_sub");
 	// process_sub->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_sub->SetOutputFilePath(Form("%s/output_vn_centbins/%s/SP_nonscaled_noneventweighted",sInputPath,sEtaGap.Data()));
+	process_sub->SetOutputFilePath(Form("%s/SP_nonscaled_noneventweighted",sOutputFilePath.Data()));
 	process_sub->SetOutputFileName("Processed.root");
 	process_sub->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
 	process_sub->SetSaveMult("Mult.root");
@@ -182,12 +196,12 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_sub->Run();
 
 	ProcessUniFlow* process_sub_norm = new ProcessUniFlow();
-	process_sub_norm->SetInputFilePath(sInputPath);
+	process_sub_norm->SetInputFilePath(sInputPath.Data());
 	process_sub_norm->SetInputFileName("AnalysisResults.root");
 	process_sub_norm->SetTaskName("UniFlow_sub");
 	process_sub_norm->SetGlobalProfNameLabel("multScaled_");
 	// process_sub_norm->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_sub_norm->SetOutputFilePath(Form("%s/output_vn_centbins/%s/SP_scaled_noneventweighted",sInputPath,sEtaGap.Data()));
+	process_sub_norm->SetOutputFilePath(Form("%s/SP_scaled_noneventweighted",sOutputFilePath.Data()));
 	process_sub_norm->SetOutputFileName("Processed.root");
 	process_sub_norm->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
 	process_sub_norm->AddTask(taskRefs);
@@ -201,12 +215,12 @@ void RunFlowSub(const char* sOutputFilePath = "")
 	process_sub_norm->Run();
 
 	ProcessUniFlow* process_sub_norm_weighted = new ProcessUniFlow();
-	process_sub_norm_weighted->SetInputFilePath(sInputPath);
+	process_sub_norm_weighted->SetInputFilePath(sInputPath.Data());
 	process_sub_norm_weighted->SetInputFileName("AnalysisResults.root");
 	process_sub_norm_weighted->SetTaskName("UniFlow_sub");
 	process_sub_norm_weighted->SetGlobalProfNameLabel("multScaled_weighted_");
 	// process_sub_norm_weighted->SetOutputFilePath("/Users/vpacik/NBI/Flow/uniFlow/results/KchK0s/K0s/plots");
-	process_sub_norm_weighted->SetOutputFilePath(Form("%s/output_vn_centbins/%s/SP_scaled_eventweighted",sInputPath,sEtaGap.Data()));
+	process_sub_norm_weighted->SetOutputFilePath(Form("%s/SP_scaled_eventweighted",sOutputFilePath.Data()));
 	process_sub_norm_weighted->SetOutputFileName("Processed.root");
 	process_sub_norm_weighted->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
 	process_sub_norm_weighted->AddTask(taskRefs);
