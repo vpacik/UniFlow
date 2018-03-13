@@ -162,6 +162,9 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow() : AliAnalysisTaskSE(),
   fFlowRunByRunWeights(kTRUE),
   fFlowUseWeights(kFALSE),
   fFlowUse3Dweights(kFALSE),
+  fUseOnlineSubt(kFALSE),
+  fFlowOnlineSubtFilePath(),
+  fFileForOnlineSubt(0x0),
 
   // events selection
   fPVtxCutZ(10.0),
@@ -439,6 +442,9 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow(const char* name) : AliAnalysisTa
   fFlowRunByRunWeights(kTRUE),
   fFlowUseWeights(kFALSE),
   fFlowUse3Dweights(kFALSE),
+  fUseOnlineSubt(kFALSE),
+  fFlowOnlineSubtFilePath(),
+  fFileForOnlineSubt(0x0),
 
   // events selection
   fPVtxCutZ(10.0),
@@ -711,6 +717,10 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow(const char* name) : AliAnalysisTa
         fp2KaonCor2Neg[iSample][iGap][iHarm] = 0x0;
         fp2ProtonCor2Pos[iSample][iGap][iHarm] = 0x0;
         fp2ProtonCor2Neg[iSample][iGap][iHarm] = 0x0;
+
+        fpRefsCor2_onsub[iSample][iGap][iHarm] = 0x0;
+        fp2ChargedCor2Pos_onsub[iSample][iGap][iHarm] = 0x0;
+        fp2ChargedCor2Neg_onsub[iSample][iGap][iHarm] = 0x0;
       }
 
       fp3V0sCorrK0sCor2Pos[iGap][iHarm] = 0x0;
@@ -1037,6 +1047,10 @@ void AliAnalysisTaskUniFlow::UserCreateOutputObjects()
             fpRefsCor2[iSample][iGap][iHarm]->Sumw2(kTRUE);
             fFlowRefs->Add(fpRefsCor2[iSample][iGap][iHarm]);
 
+            fpRefsCor2_onsub[iSample][iGap][iHarm] = new TProfile(Form("fpRefs_<2>_harm%d_gap%02.2g_sample%d_onsub",fHarmonics[iHarm],10*fEtaGap[iGap],iSample),Form("Ref: <<2>> | Gap %g | n=%d | sample %d ; centrality/multiplicity;",fEtaGap[iGap],fHarmonics[iHarm],iSample), iMultNumBins,fFlowCentMin,fFlowCentMax);
+            fpRefsCor2_onsub[iSample][iGap][iHarm]->Sumw2(kTRUE);
+            fFlowRefs->Add(fpRefsCor2_onsub[iSample][iGap][iHarm]);
+
             if(fCutFlowDoFourCorrelations && iGap == 0)
             {
               fpRefsCor4[iSample][iHarm] = new TProfile(Form("fpRefs_<4>_harm%d_gap%02.2g_sample%d",fHarmonics[iHarm],10*fEtaGap[iGap],iSample),Form("Ref: <<4>> | Gap %g | n=%d | sample %d ; centrality/multiplicity;",fEtaGap[iGap],fHarmonics[iHarm],iSample), iMultNumBins,fFlowCentMin,fFlowCentMax);
@@ -1048,11 +1062,19 @@ void AliAnalysisTaskUniFlow::UserCreateOutputObjects()
             fp2ChargedCor2Pos[iSample][iGap][iHarm]->Sumw2(kTRUE);
             fFlowCharged->Add(fp2ChargedCor2Pos[iSample][iGap][iHarm]);
 
+            fp2ChargedCor2Pos_onsub[iSample][iGap][iHarm] = new TProfile2D(Form("fp2Charged_<2>_harm%d_gap%02.2g_Pos_sample%d_onsub",fHarmonics[iHarm],10*fEtaGap[iGap],iSample),Form("Charged: <<2'>> | Gap %g | n=%d | sample %d | POIs pos; centrality/multiplicity; #it{p}_{T} (GeV/c)",fEtaGap[iGap],fHarmonics[iHarm],iSample), iMultNumBins,fFlowCentMin,fFlowCentMax, iPOIsPtNumBins,fFlowPOIsPtMin,fFlowPOIsPtMax);
+            fp2ChargedCor2Pos_onsub[iSample][iGap][iHarm]->Sumw2(kTRUE);
+            fFlowCharged->Add(fp2ChargedCor2Pos_onsub[iSample][iGap][iHarm]);
+
             if(fEtaGap[iGap] != -1.)
             {
               fp2ChargedCor2Neg[iSample][iGap][iHarm] = new TProfile2D(Form("fp2Charged_<2>_harm%d_gap%02.2g_Neg_sample%d",fHarmonics[iHarm],10*fEtaGap[iGap],iSample),Form("Charged: <<2'>> | Gap %g | n=%d | sample %d | POIs neg; centrality/multiplicity; #it{p}_{T} (GeV/c)",fEtaGap[iGap],fHarmonics[iHarm],iSample), iMultNumBins,fFlowCentMin,fFlowCentMax, iPOIsPtNumBins,fFlowPOIsPtMin,fFlowPOIsPtMax);
               fp2ChargedCor2Neg[iSample][iGap][iHarm]->Sumw2(kTRUE);
               fFlowCharged->Add(fp2ChargedCor2Neg[iSample][iGap][iHarm]);
+
+              fp2ChargedCor2Neg_onsub[iSample][iGap][iHarm] = new TProfile2D(Form("fp2Charged_<2>_harm%d_gap%02.2g_Neg_sample%d_onsub",fHarmonics[iHarm],10*fEtaGap[iGap],iSample),Form("Charged: <<2'>> | Gap %g | n=%d | sample %d | POIs neg; centrality/multiplicity; #it{p}_{T} (GeV/c)",fEtaGap[iGap],fHarmonics[iHarm],iSample), iMultNumBins,fFlowCentMin,fFlowCentMax, iPOIsPtNumBins,fFlowPOIsPtMin,fFlowPOIsPtMax);
+              fp2ChargedCor2Neg_onsub[iSample][iGap][iHarm]->Sumw2(kTRUE);
+              fFlowCharged->Add(fp2ChargedCor2Neg_onsub[iSample][iGap][iHarm]);
             }
 
             if(fCutFlowDoFourCorrelations && iGap == 0)
@@ -1826,6 +1848,12 @@ Bool_t AliAnalysisTaskUniFlow::InitializeTask()
         fh2WeightPhi = (TH2D*) listFlowWeights->FindObject("Phi"); if(!fh2WeightPhi) { AliFatal("Phi weights not found"); return kFALSE; }
       }
     }
+  }
+
+  if(fUseOnlineSubt)
+  {
+    fFileForOnlineSubt = TFile::Open(fFlowOnlineSubtFilePath.Data(),"READ");
+    if(!fFileForOnlineSubt) { AliFatal("File for online subtraction not found"); return kFALSE; }
   }
 
   AliInfo("Preparing particle containers (std::vectors)");
@@ -3649,6 +3677,19 @@ void AliAnalysisTaskUniFlow::DoFlowRefs(const Int_t iEtaGapIndex)
         Double_t Nn2gap = TwoGap(iHarmonics,-iHarmonics).Re();
         Double_t dValue = Nn2gap / D02gap;
         if( TMath::Abs(dValue) <= 1.0 ) { fpRefsCor2[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, dValue, D02gap); }
+        if( fUseOnlineSubt && TMath::Abs(dValue) <= 1.0 )
+        {
+          TH1D* hBaseline = (TH1D*) fFileForOnlineSubt->Get(Form("hCum2_Refs_harm%d_gap%02.2g",iHarmonics,10*dEtaGap));
+          if(!hBaseline) { AliFatal("hbaseline hist for non-flow online not found!"); return; }
+          TProfile* hBaselineMult = (TProfile*) fFileForOnlineSubt->Get("fpRefsMult_rebin");
+          if(!hBaselineMult) { AliFatal("hBaselineMult hist for non-flow online not found!"); return; }
+
+          Double_t dBaseline = hBaseline->GetBinContent(1);
+          Double_t dBaseMult = hBaselineMult->GetBinContent(1);
+          Double_t dMult = fVectorRefs->size();
+          Double_t dSubt = dValue - dBaseline*dBaseMult/dMult;
+          fpRefsCor2_onsub[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, dSubt, D02gap);
+        }
       }
     }
   } // endif {dEtaGap}
@@ -3823,6 +3864,21 @@ void AliAnalysisTaskUniFlow::DoFlowPOIs(const Int_t iEtaGapIndex, const PartSpec
             {
               if(bHasMass) { prof3TwoPos[iHarm]->Fill(fIndexCentrality, dPt, dMass, dValue, D02pos); }
               else { prof2TwoPos[iHarm]->Fill(fIndexCentrality, dPt, dValue, D02pos); }
+
+              if( fUseOnlineSubt && species == kCharged )
+              {
+                TH1D* hBaseline = (TH1D*) fFileForOnlineSubt->Get(Form("hCum2_Charged_harm%d_gap%02.2g_cent0",iHarmonics,10*dEtaGap));
+                if(!hBaseline) { AliFatal("hbaseline hist for non-flow online not found!"); return; }
+                TProfile* hBaselineMult = (TProfile*) fFileForOnlineSubt->Get("fpRefsMult_rebin");
+                if(!hBaselineMult) { AliFatal("hBaselineMult hist for non-flow online not found!"); return; }
+
+                Double_t dBaseline = hBaseline->GetBinContent(hBaseline->FindFixBin(dPt));
+                Double_t dBaseMult = hBaselineMult->GetBinContent(1);
+                Double_t dMult = fVectorRefs->size();
+                Double_t dSubt = dValue - dBaseline*dBaseMult/dMult;
+                fp2ChargedCor2Pos_onsub[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, dPt, dSubt, D02pos);
+              }
+
             }
           }
         }
@@ -3840,6 +3896,21 @@ void AliAnalysisTaskUniFlow::DoFlowPOIs(const Int_t iEtaGapIndex, const PartSpec
             {
               if(bHasMass) { prof3TwoNeg[iHarm]->Fill(fIndexCentrality, dPt, dMass, dValue, D02neg); }
               else { prof2TwoNeg[iHarm]->Fill(fIndexCentrality, dPt, dValue, D02neg); }
+
+              if( fUseOnlineSubt && species == kCharged )
+              {
+                TH1D* hBaseline = (TH1D*) fFileForOnlineSubt->Get(Form("hCum2_Charged_harm%d_gap%02.2g_cent0",iHarmonics,10*dEtaGap));
+                if(!hBaseline) { AliFatal("hbaseline hist for non-flow online not found!"); return; }
+                TProfile* hBaselineMult = (TProfile*) fFileForOnlineSubt->Get("fpRefsMult_rebin");
+                if(!hBaselineMult) { AliFatal("hBaselineMult hist for non-flow online not found!"); return; }
+
+                Double_t dBaseline = hBaseline->GetBinContent(hBaseline->FindFixBin(dPt));
+                Double_t dBaseMult = hBaselineMult->GetBinContent(1);
+                Double_t dMult = fVectorRefs->size();
+                Double_t dSubt = dValue - dBaseline*dBaseMult/dMult;
+                fp2ChargedCor2Neg_onsub[fIndexSampling][iEtaGapIndex][iHarm]->Fill(fIndexCentrality, dPt ,dSubt, D02neg);
+              }
+
             }
           }
         }

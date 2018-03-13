@@ -44,6 +44,7 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       void                    SetFlowFillWeights(Bool_t weights = kTRUE) { fFlowFillWeights = weights; }
       void                    SetUseWeigthsFile(const char* file, Bool_t bRunByRun) { fFlowWeightsPath = file; fFlowRunByRunWeights = bRunByRun; fFlowUseWeights = kTRUE; } //! NOTE file has to include "alien:///" if the file is on grid
       void                    SetUseWeights3D(Bool_t use = kTRUE) { fFlowUse3Dweights = use; }
+      void                    SetBaseFileForSubt(const char* file) { fFlowOnlineSubtFilePath = file; fUseOnlineSubt = kTRUE; }
       // events setters
       void                    SetColisionSystem(ColSystem colSystem = kPP) { fColSystem = colSystem; }
       void                    SetMultEstimator(const char* mult = "V0A") { fMultEstimator = mult; }
@@ -133,7 +134,7 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       static const Short_t    fPhiNumBinsMass = 60; // number of InvMass bins for phi distribution
       static const Short_t    fiNumIndexQA = 2; // QA indexes: 0: before cuts // 1: after cuts
 
-      const static Short_t    fNumSamples = 10; // overall number of samples (from random sampling) used
+      const static Short_t    fNumSamples = 1; // overall number of samples (from random sampling) used
       const static Int_t      fNumHarmonics = 1; // number of harmonics
       static Int_t            fHarmonics[fNumHarmonics]; // values of used harmonics
       const static Int_t      fNumEtaGap = 3; // number of harmonics
@@ -248,6 +249,9 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       Bool_t                  fFlowUse3Dweights; // [kFALSE] flag for using 3D GF weights, if kFALSE, 2D weights are expected
       Bool_t                  fFlowRunByRunWeights; // [kTRUE] flag for using rub-by-run weigths from weigths file; if false, only one set of histrograms is provided
       TString                 fFlowWeightsPath; //[] path to source root file with weigthts (if empty unit weights are applied) e.g. "alice/cern.ch/user/k/kgajdoso/EfficienciesWeights/2016/PhiWeight_LHC16kl.root"
+      TString                 fFlowOnlineSubtFilePath; // [] path to file with baseline for pp subtraction
+      Bool_t                  fUseOnlineSubt; // [kFALSE] using non-flow online subtraction
+      TFile*                  fFileForOnlineSubt; //! input file for online subtraction
 
 
       //cuts & selection: events
@@ -403,6 +407,11 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       TProfile3D*     fp3V0sCorrK0sCor4[fNumHarmonics]; //! <4'> correlations of K0s candidates (cent, pT, InvMass)
       TProfile3D*     fp3V0sCorrLambdaCor4[fNumHarmonics]; //! <4'> correlations of (Anti-)Lambda candidates (cent, pT, InvMass)
       TProfile3D*     fp3PhiCorrCor4[fNumHarmonics]; //! <4'> correlations of phi candidates / unlike-sign pairs (cent, pT, InvMass)
+
+      TProfile*       fpRefsCor2_onsub[fNumSamples][fNumEtaGap][fNumHarmonics]; //! <2> correlations for RFPs
+      TProfile2D*     fp2ChargedCor2Pos_onsub[fNumSamples][fNumEtaGap][fNumHarmonics]; //! <2'> correlations for Charged tracks POIs: POIs in Eta>0
+      TProfile2D*     fp2ChargedCor2Neg_onsub[fNumSamples][fNumEtaGap][fNumHarmonics]; //! <2'> correlations for Charged tracks POIs: POIs in Eta<0
+
 
       // Events
       TH2D*           fhEventSampling; //! distribution of sampled events (based on randomly generated numbers)

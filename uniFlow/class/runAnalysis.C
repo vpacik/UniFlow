@@ -1,7 +1,7 @@
 void runAnalysis()
 {
-    Bool_t local = 1; // set if you want to run the analysis locally (kTRUE), or on grid (kFALSE)
-    Bool_t gridTest = 0; // if you run on grid, specify test mode (kTRUE) or full grid model (kFALSE)
+    Bool_t local = 0; // set if you want to run the analysis locally (kTRUE), or on grid (kFALSE)
+    Bool_t gridTest = 1; // if you run on grid, specify test mode (kTRUE) or full grid model (kFALSE)
 
     TString sGridMode = "full";
     //TString sGridMode = "terminate";
@@ -83,17 +83,18 @@ void runAnalysis()
     task1->SetNumEventsAnalyse(1);
     task1->SetMC(kFALSE);
     // task1->SetSampling(kTRUE);
-    task1->SetFillQAhistos(kTRUE);
-    task1->SetProcessPID(kTRUE);
-    task1->SetProcessPhi(kTRUE);
-    task1->SetProcessV0s(kTRUE);
+    task1->SetFillQAhistos(kFALSE);
+    task1->SetProcessPID(kFALSE);
+    task1->SetProcessPhi(kFALSE);
+    task1->SetProcessV0s(kFALSE);
     // Flow
+    task1->SetBaseFileForSubt("alien:///alice/cern.ch/user/v/vpacik/forsubt.root");
     // task1->SetFlowRFPsPtMin(0.2);
     // task1->SetFlowRFPsPtMax(5.0);
-    task1->SetFlowFillWeights(kTRUE);
+    task1->SetFlowFillWeights(kFALSE);
     // task1->SetFlowDoFourCorrelations(kFALSE);
     // task1->SetUseWeigthsFile("alien:///alice/cern.ch/user/v/vpacik/weights-prel/weights_16l.root",kFALSE);
-    task1->SetUseWeigthsFile("./weights_16l.root",kTRUE);
+    // task1->SetUseWeigthsFile("./weights_16l.root",kTRUE);
     task1->SetUseWeights3D(kFALSE);
     // Events selection
     // task1->SetUseAliEventCuts();
