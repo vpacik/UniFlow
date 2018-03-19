@@ -239,6 +239,7 @@ class ProcessUniFlow
     void        SuggestMultBinning(const Short_t numFractions);
     void        SuggestPtBinning(TH3D* histEntries = 0x0, TProfile3D* profFlowOrig = 0x0, FlowTask* task = 0x0, Short_t binMult = 0); //
     TH1D*       DesampleList(TList* list = 0x0, FlowTask* task = 0x0, Short_t iMultBin = 0); // Desample list of samples for estimating the uncertanity
+    TH1D*       Desampling(TList* list, TH1D* hMerged, FlowTask* task, Short_t iMultBin = 0); // (new-refactored) desampling procedure
     TH1D*       TestRebin(TH1D* hOrig = 0x0, FlowTask* task = 0x0); // testing desample - manual rebin
 
     void        TestProjections(); // testing projection of reconstructed particles
@@ -593,10 +594,8 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
 
   for(Short_t i(0); i < task->fNumSamples; i++)
   {
-    prof = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<2>_harm%d_gap%02.2g_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,i));
-    if(!prof) { Warning(Form("Profile sample %d does not exits. Skipping",i),"ProcesRefs"); continue; }
-
-
+    TProfile* prof = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<2>_harm%d_gap%02.2g_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,i));
+    if(!prof) { Warning(Form("Profile sample %d does not exits. Skipping",i),"ProcesRefs"); return kFALSE; }
 
     if(task->fRebinning)
     {
@@ -614,17 +613,39 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
     list->Add(histProj);
   }
 
+  // merging samples in listMerge to get merged histo
+  // merging all samples together (NOTE: good for Refs)
+  TProfile* merged = (TProfile*) listMerge->At(0)->Clone();
+  merged->Reset();
+  Double_t mergeStatus = merged->Merge(listMerge);
+  merged->SetName(Form("hCum2_%s_harm%d_gap%s_merged",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data()));
+  if(mergeStatus == -1) { Error("Merging unsuccesfull","ProcessRefs"); return kFALSE; }
+
+  TH1D* hMerged = (TH1D*) merged->ProjectionX();
+  hMerged->SetName(Form("hFlow2_%s_harm%d_gap%s_merged",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data()));
+
   // desampling (similarly to PID & Charged tracks)
-  TH1D* hDesampled = DesampleList(list,task);
+  // TH1D* hDesampled = DesampleList(list,task);
+  TH1D* hDesampled = Desampling(list, hMerged, task);
+
+  TCanvas* canTest = new TCanvas("canTest","canTest");
+  canTest->Divide(2,1);
+  canTest->cd(1);
+  hMerged->Draw();
+  canTest->cd(2);
+  hDesampled->Draw();
+
+  return kFALSE;
+
   if(!hDesampled) { Error("Desampling unsuccesfull","ProcessRefs"); return kFALSE; }
   hDesampled->SetName(Form("hCum2_%s_harm%d_gap%s",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data()));
   hDesampled->SetTitle(Form("%s c_{%d}{2} | Gap %s ",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data()));
 
+  // estimating vn out of cn
   TH1D* hDesampledFlow = (TH1D*) hDesampled->Clone(Form("%s_flow",hDesampled->GetName()));
   hDesampledFlow->SetName(Form("hFlow2_%s_harm%d_gap%s",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data()));
   hDesampledFlow->SetTitle(Form("%s v_{%d}{2} | Gap %s ",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data()));
 
-  // estimating vn out of cn
   Double_t dContent = 0., dError = 0.;
   for(Short_t iBin(1); iBin < hDesampled->GetNbinsX()+1; iBin++)
   {
@@ -643,14 +664,13 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
     }
   }
 
-
   // saving to output file
   ffOutputFile->cd();
   hDesampled->Write(Form("%s",hDesampled->GetName()));
   hDesampledFlow->Write(Form("%s",hDesampledFlow->GetName()));
 
   // merging all samples together (NOTE: good for Refs)
-  TH1D* hMerged = 0x0;
+  hMerged = 0x0;
   if(task->fSampleMerging)
   {
     TProfile* merged = (TProfile*) listMerge->At(0)->Clone();
@@ -1210,6 +1230,249 @@ TH1D* ProcessUniFlow::DesampleList(TList* list, FlowTask* task, Short_t iMultBin
 
   std::vector<Double_t> vecContents;
   std::vector<Double_t> vecErrors;
+  Double_t dMean = 0;
+  Double_t dRMS = 0;
+
+  Double_t dSum = 0;
+  Double_t dW = 0;
+  Double_t dAverage = 0;
+  Double_t dAve_err = 0;
+
+  for(Short_t bin(1); bin < hTempSample->GetNbinsX()+1; bin++)
+  {
+    dSum = 0;
+    dW = 0;
+    dAverage = 9.;
+    dAve_err = 9.;
+
+    vecContents.clear();
+    vecErrors.clear();
+
+    for(Short_t iSample(0); iSample < task->fNumSamples; iSample++)
+    {
+      hTempSample = (TH1D*) list->At(iSample);
+      if(!hTempSample) { Warning(Form("Sample %d not found! Skipping!",iSample),"DesampleList"); continue; }
+
+      content = hTempSample->GetBinContent(bin);
+      error = hTempSample->GetBinError(bin);
+
+      vecContents.push_back(content);
+      vecErrors.push_back(error);
+
+      if(error <= 0.) continue;
+
+      dSum += content / TMath::Power(error,2);
+      dW += 1 / TMath::Power(error,2);
+      Debug(Form("Sample: %d | bin %d | %g +- %g",iSample,bin,content,error),"DesampleList");
+    }
+
+    Debug(Form(" --- bin %d | Sum %g +- %g",bin,dSum,dW),"DesampleList");
+
+    if(dSum == 0. && dW == 0.) continue; // skipping empty bins
+
+    if(dW > 0.)
+    {
+      dAverage = dSum / dW;
+      dAve_err = TMath::Sqrt(1/dW);
+    }
+
+    Debug(Form("W average | bin %d | %g +- %g",bin,dAverage,dAve_err),"DesampleList");
+
+    // working on weighted mean and RMS
+    if(vecContents.size() != vecErrors.size()) { Warning("Something went wrong: Vector with contents and error have not the same size","DesampleList"); }
+
+    dSum = 0;
+    dW = 0;
+
+    for(ULong_t iSample(0); iSample < vecContents.size(); iSample++)
+    {
+      content = vecContents.at(iSample);
+      error = vecErrors.at(iSample);
+
+      // weighted mean
+      // dW += TMath::Power(error, -2);
+      // dSum += content * TMath::Power(error, -2);
+
+      // non-weighted mean
+      dW++;
+      dSum += content;
+    }
+
+    dMean = dSum/dW;
+
+    dSum = 0;
+    for(ULong_t iSample(0); iSample < vecContents.size(); iSample++)
+    {
+      content = vecContents.at(iSample);
+      // error = vecErrors.at(iSample);
+      error = 1.;
+
+      dSum += TMath::Power( (dMean - content) / error ,2);
+    }
+    dRMS = TMath::Sqrt(dSum / (dW-1));
+    Debug(Form("Mean | bin %d | %g +- %g",bin,dMean,dRMS),"DesampleList");
+
+    //ratio->SetBinContent(bin, dAverage / merged->GetBinContent(bin));
+    //ratioErr->SetBinContent(bin, dAve_err / merged->GetBinError(bin));
+
+    if(task->fDesampleUseRMS)
+    {
+      hDesampled->SetBinContent(bin,dMean);
+      // hDesampled->SetBinError(bin,dRMS);
+      hDesampled->SetBinError(bin,dRMS/TMath::Sqrt(task->fNumSamples));
+    }
+    else
+    {
+      hDesampled->SetBinContent(bin,dAverage);
+      hDesampled->SetBinError(bin,dAve_err);
+    }
+    Debug(Form("Desampled: bin %d | %g +- %g\n",bin,hDesampled->GetBinContent(bin),hDesampled->GetBinError(bin)),"DesampleList");
+  }
+
+  // at this point, hDesampled is ready
+
+  // getting copy which does not affect histo which is returned
+  TH1D* hDesampledClone = (TH1D*) hDesampled->Clone(Form("%sClone",hDesampled->GetName()));
+
+  TList* listOutput = new TList(); // list for collecting all QA histos
+
+  // doing QA plots with spread, etc.
+  TCanvas* canDesample = new TCanvas(Form("canDesample_%s",task->fName.Data()),Form("canDesample_%s",task->fName.Data()),1200,400);
+  canDesample->Divide(3,1);
+
+  TH1D* hTempRatio = 0x0;
+  TH1D* hTempError = 0x0;
+
+  TLine* lineUnity = new TLine();
+  lineUnity->SetLineColor(kRed);
+  lineUnity->SetLineWidth(3);
+
+  canDesample->cd(1);
+  hDesampledClone->SetStats(kFALSE);
+  hDesampledClone->SetFillColor(kBlue);
+  hDesampledClone->SetStats(kFALSE);
+  hDesampledClone->SetMarkerStyle(20);
+  hDesampledClone->SetMarkerSize(0.5);
+  hDesampledClone->SetMarkerColor(kRed);
+  hDesampledClone->DrawCopy("E2");
+
+  for(Short_t iSample(0); iSample < task->fNumSamples; iSample++)
+  {
+    hTempSample = (TH1D*) list->At(iSample);
+    if(!hTempSample) { Warning(Form("Sample %d not found during plotting QA! Skipping!",iSample),"DesampleList"); continue; }
+
+    canDesample->cd(1);
+    hTempSample->SetStats(kFALSE);
+    hTempSample->SetLineColor(30+2*iSample);
+    hTempSample->SetMarkerColor(30+2*iSample);
+    hTempSample->SetMarkerStyle(24);
+    hTempSample->SetMarkerSize(0.5);
+    hTempSample->DrawCopy("hist p same");
+
+    hTempRatio = (TH1D*) hTempSample->Clone(Form("%s_ratio",hTempSample->GetName()));
+    hTempRatio->Divide(hDesampled);
+    hTempRatio->SetYTitle("Value: final / sample");
+    hTempRatio->SetTitleOffset(1.2,"Y");
+
+    canDesample->cd(2);
+    hTempRatio->SetMinimum(0.6);
+    hTempRatio->SetMaximum(1.4);
+    hTempRatio->Draw("hist p same");
+
+    hTempError = (TH1D*) hTempSample->Clone(Form("%s_error",hTempSample->GetName()));
+    for(Short_t bin(1); bin < hTempSample->GetNbinsX()+1; bin++) { hTempError->SetBinContent(bin,hTempSample->GetBinError(bin)); }
+
+    canDesample->cd(3);
+    hTempError->SetMinimum(0.);
+    hTempError->SetMaximum(1.5*hTempError->GetMaximum());
+    hTempError->SetYTitle("Uncertainty");
+    hTempError->SetTitleOffset(1.2,"Y");
+
+    hTempError->Draw("hist p same");
+
+    listOutput->Add(hTempSample);
+    listOutput->Add(hTempRatio);
+    listOutput->Add(hTempError);
+  }
+
+  canDesample->cd(1);
+  hDesampledClone->DrawCopy("hist p same");
+
+  canDesample->cd(2);
+  lineUnity->DrawLine(hTempRatio->GetXaxis()->GetXmin(),1,hTempRatio->GetXaxis()->GetXmax(),1);
+
+  hTempError = (TH1D*) hDesampledClone->Clone(Form("%s_error",hDesampled->GetName()));
+  for(Short_t bin(1); bin < hTempSample->GetNbinsX()+1; bin++) { hTempError->SetBinContent(bin,hDesampledClone->GetBinError(bin)); }
+  listOutput->Add(hTempError);
+
+  canDesample->cd(3);
+  hTempError->Draw("hist p same");
+
+  // saving QA plots
+  canDesample->SaveAs(Form("%s/Desampling_%s_harm%d_gap%g_cent%d_%s.%s",fsOutputFilePath.Data(),task->GetSpeciesName().Data(),task->fHarmonics,10*task->fEtaGap,iMultBin,task->fName.Data(),fsOutputFileFormat.Data()));
+
+  Info("Saving desampling QA into output file","DesampleList");
+  ffDesampleFile->cd();
+  listOutput->Add(canDesample);
+  listOutput->Write(Form("Desampling_%s_cent%d_%s",task->GetSpeciesName().Data(),iMultBin,task->fName.Data()),TObject::kSingleKey);
+
+  // deleting created stuff
+  delete listOutput;
+  // delete canDesample;
+  delete lineUnity;
+  // if(hTempSample) delete hTempSample;
+  // delete hTempRatio;
+  // delete hTempError;
+  // delete hDesampledClone;
+
+  return hDesampled;
+}
+//_____________________________________________________________________________
+TH1D* ProcessUniFlow::Desampling(TList* list, TH1D* hMerged, FlowTask* task, Short_t iMultBin)
+// Calculate the uncertainties in each bin from sqrt of variance of individual saples and uses the central values from merged histogram
+{
+  if(!task) { Error("FlowTask does not exists","Desampling"); return 0x0; }
+  if(!hMerged) { Error("Merged histo does not exists","Desampling"); return 0x0; }
+  if(!list) { Error("List does not exists","Desampling"); return 0x0; }
+  if(list->GetEntries() < 1) { Error("List is empty","Desampling"); return 0x0; }
+  if(list->GetEntries() != task->fNumSamples) { Warning("Number of list entries is different from task number of samples","DesampleList"); }
+
+  Debug(Form("Number of samples in list pre-desampling: %d",list->GetEntries()),"DesampleList");
+
+  TH1D* hDesampled = (TH1D*) hMerged->Clone(Form("%s_Desampled",hMerged->GetName()));
+  hDesampled->Reset(); // just to be sure
+
+  // filling std::vectors with contents and errors
+  for(Int_t iBin(1); iBin < hDesampled->GetNbinsX()+1; ++iBin)
+  {
+    Double_t dMergedMean = hMerged->GetBinContent(iBin);
+
+    Double_t dVariance = 0.0;
+    for(Int_t iSample(0); iSample < list->GetEntries(); ++iSample)
+    {
+      TProfile* profSample = (TProfile*) list->At(iSample);
+      if(!profSample) { Error(Form("Sample %d not found!",iSample),"Desampling"); return 0x0; }
+
+      Double_t dCon = profSample->GetBinContent(iBin);
+      Double_t dErr = profSample->GetBinError(iBin);
+
+      dVariance += TMath::Power(dCon - dMergedMean,2.0);
+    }
+    dVariance = dVariance / list->GetEntries();
+
+    hDesampled->SetBinContent(iBin,dMergedMean);
+    hDesampled->SetBinError(iBin,TMath::Sqrt(dVariance));
+  }
+
+  return hDesampled;
+
+  std::vector<Double_t> vecContents;
+  std::vector<Double_t> vecErrors;
+
+  TH1D* hTempSample = (TH1D*) list->At(0);
+  Double_t content = 0;
+  Double_t error = 0;
+
   Double_t dMean = 0;
   Double_t dRMS = 0;
 
