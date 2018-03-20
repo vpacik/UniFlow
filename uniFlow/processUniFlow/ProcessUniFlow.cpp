@@ -236,6 +236,7 @@ class ProcessUniFlow
 
     Bool_t 	    ExtractFlowK0sAlex(FlowTask* task, TH1* hInvMass, TH1* hFlowMass, Double_t &dFlow, Double_t &dFlowError, TCanvas* canFitInvMass); // extract flow via flow-mass method for K0s candidates
 
+
     void        SuggestMultBinning(const Short_t numFractions);
     void        SuggestPtBinning(TH3D* histEntries = 0x0, TProfile3D* profFlowOrig = 0x0, FlowTask* task = 0x0, Short_t binMult = 0); //
     TProfile*   MergeTProfile(TList* list); // Merge TProfiles in a list and return it
@@ -612,20 +613,10 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
     TProfile* prof = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<2>_harm%d_gap%02.2g_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,i));
     if(!prof) { Warning(Form("Profile sample %d does not exits. Skipping",i),"ProcesRefs"); return kFALSE; }
 
-    if(task->fRebinning)
-    {
-      // rebinning the profiles
-      profRebin = (TProfile*) prof->Rebin(fiNumMultBins,Form("%s_rebin",prof->GetName()),fdMultBins);
-      histProj = profRebin->ProjectionX(Form("%s_proj",profRebin->GetName()));
-      listMerge->Add(profRebin);
-    }
-    else
-    {
-      // no rebinning
-      histProj = prof->ProjectionX(Form("%s_proj",prof->GetName()));
-      listMerge->Add(prof);
-    }
-    list->Add(histProj);
+    // rebinning the profiles
+    profRebin = (TProfile*) prof->Rebin(fiNumMultBins,Form("%s_rebin",prof->GetName()),fdMultBins);
+    histProj = profRebin->ProjectionX(Form("%s_proj",profRebin->GetName()));
+    listMerge->Add(profRebin);
   }
 
   // merging samples in listMerge to get merged histo
@@ -708,6 +699,7 @@ Bool_t ProcessUniFlow::ProcessDirect(FlowTask* task, Short_t iMultBin)
   if(!task) { Error("Task not valid!","ProcessDirect"); return kFALSE; }
 
   TList* listInput = 0x0;
+
   switch (task->fSpecies)
   {
     case FlowTask::kCharged:
@@ -725,120 +717,175 @@ Bool_t ProcessUniFlow::ProcessDirect(FlowTask* task, Short_t iMultBin)
       return kFALSE;
   }
 
-  // preparing vn' samples
-  TList* listFlow = new TList();
-  TList* listCum = new TList();
-  TList* listMerge = new TList();
-  TProfile2D* prof2 = 0x0;
-  TProfile2D* prof2pos = 0x0;
-  TProfile2D* prof2neg = 0x0;
-  TProfile* prof = 0x0;
-  TProfile* profRebin = 0x0;
-  TProfile* profRef = 0x0;
-  TProfile* profRefRebin = 0x0;
-  TH1D* hFlow = 0x0;
+  // Loading samples for Reference and Diff flow
+  TList* listRefs = new TList();
+  listRefs->SetOwner();
+  TList* listDiffPos = new TList();
+  listDiffPos->SetOwner();
+  TList* listDiffNeg = new TList();
+  listDiffNeg->SetOwner();
 
-  Short_t binMultLow = 0;
-  Short_t binMultHigh = 0;
-  Double_t dRef = 0;
-
-  for(Short_t iSample(0); iSample < task->fNumSamples; iSample++)
+  for(Short_t iSample(0); iSample < task->fNumSamples; ++iSample)
   {
-    if(task->fMergePosNeg)
-    {
-      // loading Pos & Neg if fMergePosNeg is ON
-      prof2pos = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<2>_harm%d_gap%02.2g_Pos_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,iSample));
-      prof2neg = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<2>_harm%d_gap%02.2g_Neg_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,iSample));
+    // ### loading reference cumulants
+    TProfile* pCn = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<2>_harm%d_gap%02.2g_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,iSample));
+    if(!pCn) { Warning(Form("Profile sample for Refs %d does not exits. Skipping",iSample),"ProcessDirect"); return kFALSE; }
 
-      if(!prof2pos || !prof2neg) { Error("Pos OR Neg profile not found for Pos&Neg merging.","ProcessDirect"); return kFALSE; }
-      listMerge->Clear();
-      listMerge->Add(prof2pos);
-      listMerge->Add(prof2neg);
+    // rebinning the profiles
+    TProfile* pCnRebin = (TProfile*) pCn->Rebin(fiNumMultBins,Form("%s_rebin",pCn->GetName()),fdMultBins);
+    listRefs->Add(pCnRebin);
 
-      prof2 = (TProfile2D*) listMerge->At(0)->Clone();
-      prof2->Reset();
-      Double_t mergeStatus = prof2->Merge(listMerge);
-      if(mergeStatus == -1) { Error("Merging unsuccesfull","ProcessDirect"); return kFALSE; }
-    }
-    else
-    {
-      // loading single profile
-      if(task->fInputTag.EqualTo(""))
-      { prof2 = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<2>_harm%d_gap%02.2g_Pos_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,iSample)); }
-      else
-      { prof2 = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<2>_harm%d_gap%02.2g_%s_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,task->fInputTag.Data(),iSample)); }
-    }
-    if(!prof2) { Error(Form("Profile sample %d does not exists.",iSample),"ProcessDirect"); return kFALSE; }
+    // loading differential cumulants
+    TProfile2D* pDnPos = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<2>_harm%d_gap%02.2g_Pos_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,iSample));
+    if(!pDnPos) { Warning(Form("Profile sample for Diffs %d does not exits. Skipping",iSample),"ProcessDirect"); return kFALSE; }
 
-    // preparing Refs
-    profRef = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<2>_harm%d_gap%02.2g_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,iSample));
-    if(!profRef) { Error(Form("Profile sample %d does not exists",iSample),"ProcesPID"); return kFALSE; }
+    // ### rebinning according in mult bin
+    Int_t binMultLow = pDnPos->GetXaxis()->FindFixBin(fdMultBins[iMultBin]);
+    Int_t binMultHigh = pDnPos->GetXaxis()->FindFixBin(fdMultBins[iMultBin+1]) - 1;
+    TProfile* pDnPosMult = pDnPos->ProfileY(Form("%s_cent%d",pDnPos->GetName(),iMultBin),binMultLow,binMultHigh);
 
-    profRefRebin = (TProfile*) profRef->Rebin(fiNumMultBins,Form("%s_rebin",profRef->GetName()),fdMultBins);
-    dRef = profRefRebin->GetBinContent(iMultBin+1);
-    profRefRebin->Draw();
-    // printf("dRef %g\n",dRef);
-    // NOTE: complains about Sumw2
-
-    // rebinning according in mult bin
-    binMultLow = prof2->GetXaxis()->FindFixBin(fdMultBins[iMultBin]);
-    binMultHigh = prof2->GetXaxis()->FindFixBin(fdMultBins[iMultBin+1]) - 1;
-    prof = prof2->ProfileY(Form("%s_cent%d",prof2->GetName(),iMultBin),binMultLow,binMultHigh);
-
+    // rebinning according to pt bins
     if(task->fNumPtBins > 0)
     {
-      // rebinning according to pt bins
-      profRebin = (TProfile*) prof->Rebin(task->fNumPtBins,Form("%s_rebin",prof->GetName()),task->fPtBinsEdges);
+      TProfile* pDnPosRebin = (TProfile*) pDnPosMult->Rebin(task->fNumPtBins,Form("%s_rebin",pDnPosMult->GetName()),task->fPtBinsEdges);
+      listDiffPos->Add(pDnPosRebin);
     }
     else
     {
-      profRebin = (TProfile*) prof->Clone(Form("%s_rebin",prof->GetName()));
+      pDnPosMult->SetName(Form("%s_rebin",pDnPosMult->GetName()));
+      listDiffPos->Add(pDnPosMult);
     }
 
+    if(task->fEtaGap > -1.0)
+    {
+      TProfile2D* pDnNeg = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<2>_harm%d_gap%02.2g_Neg_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,10*task->fEtaGap,iSample));
+      if(!pDnNeg) { Warning(Form("Profile sample for Diffs %d does not exits. Skipping",iSample),"ProcessDirect"); return kFALSE; }
 
+      // ### rebinning according in mult bin
+      Int_t binMultLow = pDnNeg->GetXaxis()->FindFixBin(fdMultBins[iMultBin]);
+      Int_t binMultHigh = pDnNeg->GetXaxis()->FindFixBin(fdMultBins[iMultBin+1]) - 1;
+      TProfile* pDnNegMult = pDnNeg->ProfileY(Form("%s_cent%d",pDnNeg->GetName(),iMultBin),binMultLow,binMultHigh);
 
-    // making TH1D projection (to avoid handling of bin entries)
-    TH1D* hCum = (TH1D*) profRebin->ProjectionX();
-    hCum->SetName(Form("%s_Cum",prof->GetName()));
-    listCum->Add(hCum);
-
-    hFlow = (TH1D*) profRebin->ProjectionX();
-    // printf("Pre %g\n",hFlow->GetBinContent(20));
-    // printf("Scale %g\n",1/TMath::Sqrt(dRef));
-    hFlow->SetName(Form("%s_Flow",prof->GetName()));
-    hFlow->Scale(1/TMath::Sqrt(dRef));
-    // printf("Post %g\n",hFlow->GetBinContent(20));
-    listFlow->Add(hFlow);
+      // rebinning according to pt bins
+      if(task->fNumPtBins > 0)
+      {
+        TProfile* pDnNegRebin = (TProfile*) pDnNegMult->Rebin(task->fNumPtBins,Form("%s_rebin",pDnNegMult->GetName()),task->fPtBinsEdges);
+        listDiffNeg->Add(pDnNegRebin);
+      }
+      else
+      {
+        pDnNegMult->SetName(Form("%s_rebin",pDnNegMult->GetName()));
+        listDiffNeg->Add(pDnNegMult);
+      }
+    }
   }
-  delete listMerge;
 
-  Debug(Form("Number of samples in list pre merging %d",listFlow->GetEntries()),"ProcessDirect");
+  Debug("Refs & Diff profile loaded and rebinned","ProcessDirect");
+  Debug(Form("Refs %d Diff %d Diff neg %d \n",listRefs->GetEntries(), listDiffPos->GetEntries(),listDiffNeg->GetEntries()));
 
-  TH1D* hDesampled = DesampleList(listFlow,task,iMultBin);
-  if(!hDesampled) { Error("Desampling unsuccesfull","ProcessDirect"); return kFALSE; }
+  // preparing merged pCnM, pDnPosM, pDnNegM
+  TProfile* pCnM = MergeTProfile(listRefs);
+  TProfile* pDnPosM = MergeTProfile(listDiffPos);
+  TProfile* pDnNegM = MergeTProfile(listDiffNeg);
 
-  hDesampled->SetName(Form("hFlow2_%s_harm%d_gap%s_cent%d",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data(),iMultBin));
-  hDesampled->SetTitle(Form("%s v_{%d}{2} | Gap %s | Cent %d",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data(),iMultBin));
+  TH1D* hVnPosM = (TH1D*) pDnPosM->ProjectionX();
+  hVnPosM->Scale(1.0/TMath::Sqrt(pCnM->GetBinContent(iMultBin+1)));
+  TH1D* hVnNegM = (TH1D*) pDnNegM->ProjectionX();
+  hVnNegM->Scale(1.0/TMath::Sqrt(pCnM->GetBinContent(iMultBin+1)));
+  Debug("Refs & Diff profiles merged and vn histos ready","ProcessDirect");
 
-  // desampling cumulants
-  TH1D* hDesampled_Cum = DesampleList(listCum,task,iMultBin);
-  if(!hDesampled_Cum) { Error("Desampling unsuccesfull","ProcessDirect"); return kFALSE; }
+  // NB: ANY OPERATION with profiles before subtraction should be done arround here !
 
-  hDesampled_Cum->SetName(Form("hCum2_%s_harm%d_gap%s_cent%d",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data(),iMultBin));
-  hDesampled_Cum->SetTitle(Form("%s v_{%d}{2} | Gap %s | Cent %d",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data(),iMultBin));
+  // making list for desambling
+  TList* listDesPos = new TList();
+  listDesPos->SetOwner();
+  TList* listDesNeg = new TList();
+  listDesNeg->SetOwner();
 
+  for(Short_t iSample(0); iSample < task->fNumSamples; ++iSample)
+  {
+    TProfile* pCn = (TProfile*) listRefs->At(iSample);
+    if(!pCn) { Error(Form("Accessing loaded pCn profile in %d failed",iSample),"ProcessDirect"); return kFALSE; }
 
-  // saving to output file
+    TProfile* pDnPos = (TProfile*) listDiffPos->At(iSample);
+    if(!pDnPos) { Error(Form("Asccssing loaded pDnPos profile in %d failed",iSample),"ProcessDirect"); return kFALSE; }
+
+    Double_t dRef = pCn->GetBinContent(iMultBin+1);
+
+    TH1D* hVnPos = (TH1D*) pDnPos->ProjectionX(Form("_px_pos_%d",iSample));
+    hVnPos->Scale(1.0/TMath::Sqrt(dRef));
+    listDesPos->Add(hVnPos);
+
+    if(task->fEtaGap > -1.0)
+    {
+      TProfile* pDnNeg = (TProfile*) listDiffNeg->At(iSample);
+      if(!pDnNeg) { Error(Form("Accessing loaded pDnNeg profile in %d failed",iSample),"ProcessDirect"); return kFALSE; }
+
+      TH1D* hVnNeg = (TH1D*) pDnNeg->ProjectionX(Form("_px_neg_%d",iSample));
+      hVnNeg->Scale(1.0/TMath::Sqrt(dRef));
+      listDesNeg->Add(hVnNeg);
+    }
+  }
+
+  Debug("Lists for desampling prepared","ProcessDirect");
+  Debug(Form("Diff Pos %d Diff neg %d \n",listDesPos->GetEntries(),listDesNeg->GetEntries()));
+
+  // desampling
+
+  TH1D* hVnPosDes = Desampling(listDesPos,hVnPosM,task,iMultBin);
+  TH1D* hVnNegDes = Desampling(listDesNeg,hVnNegM,task,iMultBin);
+
+  Debug("Desampling done","ProcessDirect");
+
+  // TCanvas* can = new TCanvas();
+  // can->Divide(2,2);
+  // can->cd(1);
+  // hVnPosM->DrawCopy();
+  // can->cd(2);
+  // hVnPosDes->DrawCopy();
+  // can->cd(3);
+  // hVnNegM->DrawCopy();
+  // can->cd(4);
+  // hVnNegDes->DrawCopy();
+
+  // making weighted average from Pos and Neg
+  TH1D* hVnAver = (TH1D*) hVnPosDes->Clone("_ave");
+  hVnAver->Reset();
+  for(Int_t bin(1); bin < hVnAver->GetNbinsX()+1; ++bin)
+  {
+    Double_t dConPos = hVnPosDes->GetBinContent(bin);
+    Double_t dErrPos = hVnPosDes->GetBinError(bin);
+
+    Double_t dConNeg = hVnNegDes->GetBinContent(bin);
+    Double_t dErrNeg = hVnNegDes->GetBinError(bin);
+
+    Double_t dCon = dConPos*TMath::Power(dErrPos,-2.0) + dConNeg*TMath::Power(dErrNeg,-2.0);
+    Double_t dWeight = TMath::Power(dErrPos,-2.0) + TMath::Power(dErrNeg,-2.0);
+
+    hVnAver->SetBinContent(bin, dCon/dWeight);
+    hVnAver->SetBinError(bin, 1.0 / TMath::Sqrt(dWeight));
+  }
+
+  // renaming and saving to output file
+  hVnPosDes->SetName(Form("hFlow2_Pos_%s_harm%d_gap%s_cent%d",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data(),iMultBin));
+  hVnPosDes->SetTitle(Form("%s v_{%d}{2} | Gap %s (Pos) | Cent %d",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data(),iMultBin));
+
+  hVnNegDes->SetName(Form("hFlow2_Neg_%s_harm%d_gap%s_cent%d",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data(),iMultBin));
+  hVnNegDes->SetTitle(Form("%s v_{%d}{2} | Gap %s (Neg) | Cent %d",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data(),iMultBin));
+
+  hVnAver->SetName(Form("hFlow2_%s_harm%d_gap%s_cent%d",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data(),iMultBin));
+  hVnAver->SetTitle(Form("%s v_{%d}{2} | Gap %s | Cent %d",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data(),iMultBin));
+
   ffOutputFile->cd();
-  hDesampled->Write();
-  hDesampled_Cum->Write();
+  hVnPosDes->Write();
+  hVnNegDes->Write();
+  hVnAver->Write();
 
-  delete listFlow;
-  delete prof;
-  delete profRebin;
-  delete profRefRebin;
-  delete hFlow;
-  delete hDesampled;
+  if(listRefs) delete listRefs;
+  if(listDiffPos) delete listDiffPos;
+  if(listDiffNeg) delete listDiffNeg;
+  if(listDesPos) delete listDesPos;
+  if(listDesNeg) delete listDesNeg;
 
   return kTRUE;
 }
@@ -1428,7 +1475,7 @@ TH1D* ProcessUniFlow::Desampling(TList* list, TH1D* hMerged, FlowTask* task, Sho
     // getting variance
     dVariance = dVariance / list->GetEntries();
     // standard error on the mean
-    // dVariance = dVariance / list->GetEntries();
+    dVariance = dVariance / list->GetEntries();
 
     hDesampled->SetBinContent(iBin,dMergedMean);
     hDesampled->SetBinError(iBin,TMath::Sqrt(dVariance));
