@@ -35,6 +35,7 @@ void RunProcess()
 
 	FlowTask* taskRefs = new FlowTask(FlowTask::kRefs);
 	taskRefs->SetNumSamples(iNumSamples);
+	// taskRefs->SetDesamplingUseRMS(kTRUE);
 	taskRefs->SetHarmonics(2);
 	taskRefs->SetEtaGap(dEtaGap);
 	taskRefs->SetMergePosNeg();
@@ -116,16 +117,17 @@ void RunProcess()
 	process->SetInputFilePath(sInputPath.Data());
 	process->SetInputFileName("AnalysisResults.root");
 	process->SetTaskName("UniFlow");
+	process->SetDebug();
 	process->SetOutputFilePath(sOutputFilePath.Data());
 	process->SetOutputFileName("Processed.root");
 	process->SetMultiplicityBins(dMultBinning,sizeof(dMultBinning)/sizeof(dMultBinning[0]));
 	process->SetSaveMult(kTRUE);
 	process->SetFitCumulants(kTRUE);
 	process->AddTask(taskRefs);
-	// process->AddTask(taskCharged);
-	// process->AddTask(taskPion);
-	// process->AddTask(taskKch);
-	// process->AddTask(taskProton);
+	process->AddTask(taskCharged);
+	process->AddTask(taskPion);
+	process->AddTask(taskKch);
+	process->AddTask(taskProton);
 	// process->AddTask(taskK0s);
 	// process->AddTask(taskLambda);
 	// process->AddTask(taskPhi);
