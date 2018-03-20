@@ -578,7 +578,9 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
   TProfile* profRebin  = 0x0;
   TH1D* histProj = 0x0;
   TList* list = new TList();
+  list->SetOwner(kTRUE);
   TList* listMerge = new TList();
+  listMerge->SetOwner(kTRUE);
 
   // rebinning <multiplicity>
   if(fbSaveMult)
@@ -631,16 +633,16 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
   hDesampled->SetTitle(Form("%s c_{%d}{2} | Gap %s ",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data()));
 
 
-  // comparing old and new method
+  // // comparing old and new method
   // TH1D* hDesampledList = DesampleList(list,task);
   // TCanvas* canTest = new TCanvas("canTest","canTest");
   // canTest->Divide(3,1);
   // canTest->cd(1);
-  // hMerged->Draw();
+  // hMerged->DrawCopy();
   // canTest->cd(2);
-  // hDesampled->Draw();
+  // hDesampled->DrawCopy();
   // canTest->cd(3);
-  // hDesampledList->Draw();
+  // hDesampledList->DrawCopy();
 
   // estimating vn out of cn
   TH1D* hDesampledFlow = (TH1D*) hDesampled->Clone(Form("%s_flow",hDesampled->GetName()));
@@ -677,12 +679,12 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
   // canTest->cd(2);
   // hDesampledFlow->Draw();
 
-  if(hDesampled) delete hDesampled;
-  if(hDesampledFlow) delete hDesampledFlow;
-  if(profRebin) delete profRebin;
-  if(histProj) delete histProj;
   if(list) delete list;
   if(listMerge) delete listMerge;
+  // if(hDesampled) delete hDesampled;
+  // if(hDesampledFlow) delete hDesampledFlow;
+  // if(profRebin) delete profRebin;
+  // if(histProj) delete histProj;
 
   return kTRUE;
 }
@@ -1410,7 +1412,10 @@ TH1D* ProcessUniFlow::Desampling(TList* list, TH1D* hMerged, FlowTask* task, Sho
 
       dVariance += TMath::Power(dCon - dMergedMean,2.0);
     }
+    // getting variance
     dVariance = dVariance / list->GetEntries();
+    // standard error on the mean
+    // dVariance = dVariance / list->GetEntries();
 
     hDesampled->SetBinContent(iBin,dMergedMean);
     hDesampled->SetBinError(iBin,TMath::Sqrt(dVariance));
