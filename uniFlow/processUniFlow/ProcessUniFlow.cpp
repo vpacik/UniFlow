@@ -587,15 +587,6 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
   if(!task) { Error("Task not valid!","ProcessRefs"); return kFALSE; }
   if(task->fSpecies != FlowTask::kRefs) { Error("Task species not kRefs!","ProcessRefs"); return kFALSE; }
 
-  // preparing for desampling
-  TProfile* prof = 0x0;
-  TProfile* profRebin  = 0x0;
-  TH1D* histProj = 0x0;
-  TList* list = new TList();
-  list->SetOwner(kTRUE);
-  TList* listMerge = new TList();
-  listMerge->SetOwner(kTRUE);
-
   // rebinning <multiplicity>
   if(fbSaveMult)
   {
@@ -607,6 +598,8 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
     profMult_rebin->Write(profMult_rebin->GetName());
   }
 
+  TList* listMerge = new TList();
+  listMerge->SetOwner(kTRUE);
 
   for(Short_t i(0); i < task->fNumSamples; i++)
   {
@@ -614,24 +607,19 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
     if(!prof) { Warning(Form("Profile sample %d does not exits. Skipping",i),"ProcesRefs"); return kFALSE; }
 
     // rebinning the profiles
-    profRebin = (TProfile*) prof->Rebin(fiNumMultBins,Form("%s_rebin",prof->GetName()),fdMultBins);
-    histProj = profRebin->ProjectionX(Form("%s_proj",profRebin->GetName()));
+    TProfile* profRebin = (TProfile*) prof->Rebin(fiNumMultBins,Form("%s_rebin",prof->GetName()),fdMultBins);
+    TH1D* histProj = profRebin->ProjectionX(Form("%s_proj",profRebin->GetName()));
     listMerge->Add(profRebin);
   }
 
   // merging samples in listMerge to get merged histo
   // merging all samples together (NOTE: good for Refs)
-  TProfile* merged = (TProfile*) listMerge->At(0)->Clone();
-  merged->Reset();
-  Double_t mergeStatus = merged->Merge(listMerge);
-  merged->SetName(Form("hCum2_%s_harm%d_gap%s_merged",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data()));
-  if(mergeStatus == -1) { Error("Merging unsuccesfull","ProcessRefs"); return kFALSE; }
-
+  TProfile* merged = MergeTProfile(listMerge);
   TH1D* hMerged = (TH1D*) merged->ProjectionX();
   hMerged->SetName(Form("hFlow2_%s_harm%d_gap%s_merged",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data()));
 
   // desampling (similarly to PID & Charged tracks)
-  TH1D* hDesampled = Desampling(list, hMerged, task);
+  TH1D* hDesampled = Desampling(listMerge, hMerged, task);
   if(!hDesampled) { Error("Desampling unsuccesfull","ProcessRefs"); return kFALSE; }
   hDesampled->SetName(Form("hCum2_%s_harm%d_gap%s",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data()));
   hDesampled->SetTitle(Form("%s c_{%d}{2} | Gap %s ",task->GetSpeciesName().Data(),task->fHarmonics,task->GetEtaGapString().Data()));
@@ -676,19 +664,7 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
   hDesampled->Write(Form("%s",hDesampled->GetName()));
   hDesampledFlow->Write(Form("%s",hDesampledFlow->GetName()));
 
-  // TCanvas* canTest = new TCanvas("canTest","canTest");
-  // canTest->Divide(2,1);
-  // canTest->cd(1);
-  // hDesampled->Draw();
-  // canTest->cd(2);
-  // hDesampledFlow->Draw();
-
-  if(list) delete list;
   if(listMerge) delete listMerge;
-  // if(hDesampled) delete hDesampled;
-  // if(hDesampledFlow) delete hDesampledFlow;
-  // if(profRebin) delete profRebin;
-  // if(histProj) delete histProj;
 
   return kTRUE;
 }
