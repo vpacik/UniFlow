@@ -238,6 +238,7 @@ class ProcessUniFlow
 
     void        SuggestMultBinning(const Short_t numFractions);
     void        SuggestPtBinning(TH3D* histEntries = 0x0, TProfile3D* profFlowOrig = 0x0, FlowTask* task = 0x0, Short_t binMult = 0); //
+    TProfile*   MergeTProfile(TList* list); // Merge TProfiles in a list and return it
     TH1D*       DesampleList(TList* list = 0x0, FlowTask* task = 0x0, Short_t iMultBin = 0); // Desample list of samples for estimating the uncertanity
     TH1D*       Desampling(TList* list, TH1D* hMerged, FlowTask* task, Short_t iMultBin = 0); // (new-refactored) desampling procedure
     TH1D*       TestRebin(TH1D* hOrig = 0x0, FlowTask* task = 0x0); // testing desample - manual rebin
@@ -440,6 +441,18 @@ void ProcessUniFlow::SetMultiplicityBins(Double_t* array, const Short_t size)
     fdMultBins[i] = array[i];
   }
   return;
+}
+//_____________________________________________________________________________
+TProfile* ProcessUniFlow::MergeTProfile(TList* list)
+{
+  if(!list) { Error("Input list does not exists!","MergeTProfile"); return 0x0; }
+
+  TProfile* merged = (TProfile*) list->At(0)->Clone();
+  merged->Reset();
+  Double_t mergeStatus = merged->Merge(list);
+  if(mergeStatus == -1.0) { Error("Merging unsuccesfull","MergeTProfile"); return 0x0; }
+
+  return merged;
 }
 //_____________________________________________________________________________
 void ProcessUniFlow::SuggestMultBinning(const Short_t numFractions)
