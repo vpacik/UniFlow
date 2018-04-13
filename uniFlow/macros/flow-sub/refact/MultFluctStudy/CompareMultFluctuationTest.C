@@ -37,18 +37,23 @@ void CompareMultFluctuationTest()
   TString sMethodLabels[iNumMethods] = {"scaled vect. with weights", "scaled vect. w/o weights", "not scaled vect. w/o weights"};
 
   TString sSpecies = "Charged";
-  TString sGap = "gap00";
+  TString sGap = "gap08";
 
   Int_t iMultMin = 0;
-  Int_t iMultBinWidth = 1;
+  // Int_t iMultBinWidth = 1;
+  // Int_t iMultBinWidth = 5;
+  Int_t iMultBinWidth = 10;
+  // Int_t iMultBinWidth = 30;
+  // Int_t iMultBinWidth = 50;
+  // Int_t iMultBinWidth = 75;
   Int_t iMultMax = 150/iMultBinWidth;
 
   // file with correlations in 0-20% (V0A) vs. N_RFP
-  TString sInputPathUnit = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-NchRFP-gap00/output_vn_%d/",iMultBinWidth);
+  TString sInputPathUnit = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/pp-NchRFP-gap08/output_vn_%d/",iMultBinWidth);
   // file with correlations in 0-20% (V0A)  (i.e vs centrality percentile)
-  TString sInputPathMerged = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/pPb-NchRFP-gap00/output_vn_merged/";
+  TString sInputPathMerged = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/pp-NchRFP-gap08/output_vn_merged/";
 
-  TString sOutputPath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/CompareMultFluctuationTest/pPb_gap00/%d/",iMultBinWidth);
+  TString sOutputPath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/CompareMultFluctuationTest/pp_gap08/%d/",iMultBinWidth);
   TString sOutputFileName = "output.root";
   // ##########################################################################################################
   gSystem->mkdir(sOutputPath.Data(),kTRUE);

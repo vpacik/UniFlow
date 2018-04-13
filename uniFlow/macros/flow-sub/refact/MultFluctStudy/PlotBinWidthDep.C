@@ -42,9 +42,9 @@ void PlotBinWidthDep()
   leg->SetTextSize(0.04);
 
   TString sIntputFileName = "output.root";
-  TString sOutputPath = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/CompareMultFluctuationTest/pPb_gap00/";
+  TString sOutputPath = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/CompareMultFluctuationTest/pp_gap08/";
 
-  TString sGap = "gap00";
+  TString sGap = "gap08";
   TString sSpecies = "Charged";
 
   Double_t dXmin = 0.0;
@@ -90,7 +90,7 @@ void PlotBinWidthDep()
     padRatio->SetLeftMargin(0.13);
     padRatio->Draw();
     padRatio->cd();
-    TH1* frame_canDiff_2 = (TH1*) gPad->DrawFrame(dXmin,0.85,dXmax,1.15);
+    TH1* frame_canDiff_2 = (TH1*) gPad->DrawFrame(dXmin,0.5,dXmax,1.5);
     frame_canDiff_2->SetTitle(Form("; p_{T} (GeV/c); wide / unit bin  "));
     frame_canDiff_2->SetNdivisions(510,"Y");
     frame_canDiff_2->SetTitleFont(43,"XY");
@@ -112,7 +112,7 @@ void PlotBinWidthDep()
   for(Int_t iWidth(0); iWidth < iNumBinWidths; ++iWidth)
   {
     Int_t iMultBinWidth = iBinWidths[iWidth];
-    TString sInputFilePath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/CompareMultFluctuationTest/pPb_gap00/%d/",iMultBinWidth);
+    TString sInputFilePath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/CompareMultFluctuationTest/pp_gap08/%d/",iMultBinWidth);
 
     TFile* fileIn = TFile::Open(Form("%s%s",sInputFilePath.Data(),sIntputFileName.Data()),"READ");
     if(!fileIn) { printf("ERROR: Input file not found!\n"); return; }
