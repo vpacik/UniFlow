@@ -37,295 +37,297 @@ void CompareMultFluctuationTest()
   TString sMethodLabels[iNumMethods] = {"scaled vect. with weights", "scaled vect. w/o weights", "not scaled vect. w/o weights"};
 
   TString sSpecies = "Charged";
-  TString sGap = "gap08";
+  TString sGap = "gap04";
 
-  Int_t iMultMin = 0;
-  // Int_t iMultBinWidth = 1;
-  // Int_t iMultBinWidth = 5;
-  Int_t iMultBinWidth = 10;
-  // Int_t iMultBinWidth = 30;
-  // Int_t iMultBinWidth = 50;
-  // Int_t iMultBinWidth = 75;
-  Int_t iMultMax = 150/iMultBinWidth;
+  // Int_t iMultBinWidths[] = {1,5,10,30,45};  TString sCentLabel = "(pp, 0-100%% V0A)"; //pp
+  Int_t iMultBinWidths[] = {1,5,10,30,50,75}; TString sCentLabel = "(pPb, 0-20%% V0A)"; // pPb
+  Int_t iNumBinWidths = sizeof(iMultBinWidths)/sizeof(iMultBinWidths[0]);
 
-  // file with correlations in 0-20% (V0A) vs. N_RFP
-  TString sInputPathUnit = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/pp-NchRFP-gap08/output_vn_%d/",iMultBinWidth);
-  // file with correlations in 0-20% (V0A)  (i.e vs centrality percentile)
-  TString sInputPathMerged = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/pp-NchRFP-gap08/output_vn_merged/";
-
-  TString sOutputPath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/CompareMultFluctuationTest/pp_gap08/%d/",iMultBinWidth);
-  TString sOutputFileName = "output.root";
-  // ##########################################################################################################
-  gSystem->mkdir(sOutputPath.Data(),kTRUE);
-
-  TFile* fileOut = TFile::Open(Form("%s%s",sOutputPath.Data(), sOutputFileName.Data()),"RECREATE");
-  if(!fileOut) { printf("ERROR : Output file not found!\n"); return; }
-
-  // gStyle->SetPalette(1);
-  SetCustomPalette();
-
-  Double_t dYmin = -10.0;
-  Double_t dYmax = 20.0;
-  Double_t dXmin = 0.0;
-  Double_t dXmax = 7.0;
-
-  TLine* lineUnity = new TLine(dXmin,1.0,dXmax,1.0);
-  lineUnity->SetLineColor(kGray+2);
-  lineUnity->SetLineStyle(kDashed);
-
-  TLegend* legRatio = new TLegend(0.12,0.75,0.4,0.89);
-  legRatio->SetBorderSize(0);
-  legRatio->SetFillColorAlpha(0.,0.);
-  legRatio->SetTextFont(42);
-  legRatio->SetTextSize(0.03);
-  legRatio->SetHeader(Form("Bin width %d",iMultBinWidth));
-
-  TCanvas* canRatio = new TCanvas("canRatio","canRatio",800,800);
-  TH1* frame_canRatio = (TH1*) gPad->DrawFrame(dXmin,0.8,dXmax,1.2);
-  legRatio->Draw();
-  lineUnity->Draw("same");
-
-  TCanvas* canCompMethod = new TCanvas("canCompMethod","canCompMethod",1600,800);
-  canCompMethod->Divide(2,1);
-  canCompMethod->cd(1);
-  TH1* frame_canCompMethod_1 = (TH1*) gPad->DrawFrame(dXmin,0.0,dXmax,0.5);
-  frame_canCompMethod_1->SetTitle(Form("%s v_{2}{2,%s} (0-20%% V0A) ; p_{T} (GeV/c); v_{2}{2}",sSpecies.Data(),sGap.Data()));
-  frame_canCompMethod_1->SetTitleOffset(1.45,"Y");
-  canCompMethod->cd(2);
-  TH1* frame_canCompMethod_2 = (TH1*) gPad->DrawFrame(dXmin,0.0,dXmax,0.5);
-  frame_canCompMethod_2->SetTitle(Form("%s v_{2}{2,%s} (0-20%% V0A) ; p_{T} (GeV/c); v_{2}{2}",sSpecies.Data(),sGap.Data()));
-  frame_canCompMethod_2->SetTitleOffset(1.45,"Y");
-
-  TLegend* legMethods = new TLegend(0.12,0.75,0.4,0.89);
-  legMethods->SetBorderSize(0);
-  legMethods->SetFillColorAlpha(0.,0.);
-  legMethods->SetTextFont(42);
-  legMethods->SetTextSize(0.03);
-  legMethods->SetHeader(Form("Integrated 0-20%%"));
-
-  TLegend* legMethodsWeight = new TLegend(0.12,0.75,0.4,0.89);
-  legMethodsWeight->SetBorderSize(0);
-  legMethodsWeight->SetFillColorAlpha(0.,0.);
-  legMethodsWeight->SetTextFont(42);
-  legMethodsWeight->SetTextSize(0.03);
-  legMethodsWeight->SetHeader(Form("Weighted mean (bin width %d)",iMultBinWidth));
-
-  for(Int_t iMethod(0); iMethod < iNumMethods; ++iMethod)
+  for(Int_t iWid(0); iWid < iNumBinWidths; ++iWid)
   {
-    TLegend* leg = new TLegend(0.15,0.70,0.43,0.89);
-    leg->SetBorderSize(0);
-    leg->SetFillColorAlpha(0.,0.);
-    leg->SetHeader(Form("%s",sMethodLabels[iMethod].Data()));
-    leg->SetTextFont(42);
-    leg->SetTextSize(0.036);
 
-    TLegend* legBins[3];
-    for(Int_t iLeg(0); iLeg < 3; ++iLeg)
-    {
-      legBins[iLeg] = new TLegend(0.0+iLeg*0.33 ,0.0,(iLeg+1)*0.32, 1.0);
-      legBins[iLeg]->SetBorderSize(0);
-      legBins[iLeg]->SetFillColorAlpha(0.,0.);
-      legBins[iLeg]->SetTextFont(42);
-      legBins[iLeg]->SetTextSize(0.055);
-    }
+    Int_t iMultBinWidth = iMultBinWidths[iWid];
+    Int_t iMultMin = 0;
+    Int_t iMultMax = 150/iMultBinWidth;
 
-    TCanvas* canDiff = new TCanvas(Form("canDiff"),Form("canDiff"),500,1200);
-    canDiff->cd();
-    TPad* padMain = new TPad("padMain","padMain", 0, 0.3, 1, 1.0);
-    padMain->SetBottomMargin(0.0);
-    padMain->SetRightMargin(0.03);
-    padMain->SetLeftMargin(0.13);
-    padMain->Draw();
-    padMain->cd();
-    TH1* frame_canDiff_1 = (TH1*) gPad->DrawFrame(dXmin,-0.45,dXmax,1);
-    frame_canDiff_1->SetTitle(Form("%s v_{2}{2,%s} (0-20%% V0A) ; ; v_{2}{2}",sSpecies.Data(),sGap.Data()));
-    frame_canDiff_1->SetTitleFont(43,"X");
-    frame_canDiff_1->SetTitleSize(18,"X");
-    frame_canDiff_1->SetTitleOffset(4.3,"X");
-    frame_canDiff_1->SetLabelFont(43,"X");
-    frame_canDiff_1->SetLabelSize(18,"X");
-    // frame_canDiff_1->SetTitleFont(43,"Y");
-    // frame_canDiff_1->SetTitleOffset(2.2,"Y");
+    // file with correlations in 0-20% (V0A) vs. N_RFP
+    TString sInputPathUnit = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/pPb-NchRFP-gap04/%s/output_vn_%d/",sGap.Data(),iMultBinWidth);
+    // file with correlations in 0-20% (V0A)  (i.e vs centrality percentile)
+    TString sInputPathMerged = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/pPb-NchRFP-gap04/%s/output_vn_merged/",sGap.Data());
 
-    canDiff->cd();
-    TPad* padRatio = new TPad("padRatio","padRatio", 0, 0.0, 1, 0.3);
-    padRatio->SetTopMargin(0.0);
-    padRatio->SetBottomMargin(0.25);
-    padRatio->SetRightMargin(0.03);
-    padRatio->SetLeftMargin(0.13);
-    padRatio->Draw();
-    padRatio->cd();
-    TH1* frame_canDiff_2 = (TH1*) gPad->DrawFrame(dXmin,0.85,dXmax,1.07);
-    frame_canDiff_2->SetTitle(Form("; p_{T} (GeV/c); mean / integrated   "));
-    frame_canDiff_2->SetNdivisions(505,"Y");
-    frame_canDiff_2->SetTitleFont(43,"XY");
-    frame_canDiff_2->SetTitleSize(18,"XY");
-    frame_canDiff_2->SetTitleOffset(4.3,"X");
-    frame_canDiff_2->SetTitleOffset(2.2,"Y");
-    frame_canDiff_2->SetLabelFont(43,"XY");
-    frame_canDiff_2->SetLabelSize(18,"XY");
+    TString sOutputPath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/CompareMultFluctuationTest/pPb-NchRFP-%s/%d/",sGap.Data(),iMultBinWidth);
+    TString sOutputFileName = "output.root";
+    // ##########################################################################################################
+    gSystem->mkdir(sOutputPath.Data(),kTRUE);
+
+    TFile* fileOut = TFile::Open(Form("%s%s",sOutputPath.Data(), sOutputFileName.Data()),"RECREATE");
+    if(!fileOut) { printf("ERROR : Output file not found!\n"); return; }
+
+    // gStyle->SetPalette(1);
+    SetCustomPalette();
+
+    Double_t dYmin = -10.0;
+    Double_t dYmax = 20.0;
+    Double_t dXmin = 0.0;
+    Double_t dXmax = 7.0;
+
+    TLine* lineUnity = new TLine(dXmin,1.0,dXmax,1.0);
+    lineUnity->SetLineColor(kGray+2);
+    lineUnity->SetLineStyle(kDashed);
+
+    TLegend* legRatio = new TLegend(0.12,0.75,0.4,0.89);
+    legRatio->SetBorderSize(0);
+    legRatio->SetFillColorAlpha(0.,0.);
+    legRatio->SetTextFont(42);
+    legRatio->SetTextSize(0.03);
+    legRatio->SetHeader(Form("Bin width %d",iMultBinWidth));
+
+    TCanvas* canRatio = new TCanvas("canRatio","canRatio",800,800);
+    TH1* frame_canRatio = (TH1*) gPad->DrawFrame(dXmin,0.5,dXmax,1.2);
+    legRatio->Draw();
     lineUnity->Draw("same");
 
-    TFile* fileUnit = OpenFile(sInputPathUnit+sMethods[iMethod]+"/Processed.root","READ"); if(!fileUnit) return;
-    TFile* fileMerged = OpenFile(sInputPathMerged+sMethods[iMethod]+"/Processed.root","READ"); if(!fileMerged) return;
+    TCanvas* canCompMethod = new TCanvas("canCompMethod","canCompMethod",1600,800);
+    canCompMethod->Divide(2,1);
+    canCompMethod->cd(1);
+    TH1* frame_canCompMethod_1 = (TH1*) gPad->DrawFrame(dXmin,0.0,dXmax,1.0);
+    frame_canCompMethod_1->SetTitle(Form("%s v_{2}{2,%s} %s ; p_{T} (GeV/c); v_{2}{2}",sSpecies.Data(),sGap.Data(),sCentLabel.Data()));
+    frame_canCompMethod_1->SetTitleOffset(1.45,"Y");
+    canCompMethod->cd(2);
+    TH1* frame_canCompMethod_2 = (TH1*) gPad->DrawFrame(dXmin,0.0,dXmax,1.0);
+    frame_canCompMethod_2->SetTitle(Form("%s v_{2}{2,%s} %s ; p_{T} (GeV/c); v_{2}{2}",sSpecies.Data(),sGap.Data(),sCentLabel.Data()));
+    frame_canCompMethod_2->SetTitleOffset(1.45,"Y");
 
-    TH1D* histMerged = LoadHisto(Form("hFlow2_%s_harm2_%s_cent%d",sSpecies.Data(),sGap.Data(),0),fileMerged); if(!histMerged) return;
-    StyleHist(histMerged,kRed,kFullCircle);
-    histMerged->SetLineWidth(2);
-    leg->AddEntry(histMerged,"integrated","p");
+    TLegend* legMethods = new TLegend(0.12,0.75,0.4,0.89);
+    legMethods->SetBorderSize(0);
+    legMethods->SetFillColorAlpha(0.,0.);
+    legMethods->SetTextFont(42);
+    legMethods->SetTextSize(0.03);
+    legMethods->SetHeader(Form("Integrated %s",sCentLabel.Data()));
 
-    TProfile* p_weight_sigma = new TProfile("p_weight_sigma","p_weight_sigma",histMerged->GetXaxis()->GetNbins(),histMerged->GetXaxis()->GetXbins()->GetArray());
-    if(!p_weight_sigma) { printf("Profile does not exists!\n"); return; }
-    p_weight_sigma->Sumw2();
-    StyleHist(p_weight_sigma,kViolet-1,kOpenSquare);
+    TLegend* legMethodsWeight = new TLegend(0.12,0.75,0.4,0.89);
+    legMethodsWeight->SetBorderSize(0);
+    legMethodsWeight->SetFillColorAlpha(0.,0.);
+    legMethodsWeight->SetTextFont(42);
+    legMethodsWeight->SetTextSize(0.03);
+    legMethodsWeight->SetHeader(Form("Weighted mean (bin width %d)",iMultBinWidth));
 
-    TProfile* p_weight_average = new TProfile("p_weight_average","p_weight_average",histMerged->GetXaxis()->GetNbins(),histMerged->GetXaxis()->GetXbins()->GetArray());
-    if(!p_weight_average) { printf("Profile does not exists!\n"); return; }
-    p_weight_average->Sumw2();
-    StyleHist(p_weight_average,kMagenta+2,kOpenSquare);
-
-    // hist for single pt bin distribution of v2 from differrent N_RFP bins
-    const Int_t iNumPtBins = histMerged->GetNbinsX()+2;
-    TH1D* histVnDist[iNumPtBins];
-    TH1D* histVnDistWeighted[iNumPtBins];
-    for(Int_t pt(0); pt < iNumPtBins; ++pt)
+    for(Int_t iMethod(0); iMethod < iNumMethods; ++iMethod)
     {
-      histVnDist[pt] = new TH1D(Form("histVnDist_pt%d",pt),Form("v_{2}{2,%s} %g < p_{T} < %g GeV/c; v_{2}{2,%s}; Counts",sGap.Data(),histMerged->GetBinLowEdge(pt+1),histMerged->GetBinLowEdge(pt+2),sGap.Data()), 140, -0.4,1.);
-      histVnDistWeighted[pt] = new TH1D(Form("histVnDistWeighted_pt%d",pt),Form("v_{2}{2,%s} (1/#sigma^{2} weight) %g < p_{T} < %g GeV/c; v_{2}{2,%s}; Counts (weighted)",sGap.Data(),histMerged->GetBinLowEdge(pt+1),histMerged->GetBinLowEdge(pt+2),sGap.Data()), 140, -0.4,1.);
-    }
+      TLegend* leg = new TLegend(0.15,0.70,0.43,0.89);
+      leg->SetBorderSize(0);
+      leg->SetFillColorAlpha(0.,0.);
+      leg->SetHeader(Form("%s",sMethodLabels[iMethod].Data()));
+      leg->SetTextFont(42);
+      leg->SetTextSize(0.036);
 
-    TCanvas* canDist = new TCanvas("canDist","canDist",800,800);
+      TLegend* legBins[3];
+      for(Int_t iLeg(0); iLeg < 3; ++iLeg)
+      {
+        legBins[iLeg] = new TLegend(0.0+iLeg*0.33 ,0.0,(iLeg+1)*0.32, 1.0);
+        legBins[iLeg]->SetBorderSize(0);
+        legBins[iLeg]->SetFillColorAlpha(0.,0.);
+        legBins[iLeg]->SetTextFont(42);
+        legBins[iLeg]->SetTextSize(0.055);
+      }
+
+      TCanvas* canDiff = new TCanvas(Form("canDiff"),Form("canDiff"),500,1200);
+      canDiff->cd();
+      TPad* padMain = new TPad("padMain","padMain", 0, 0.3, 1, 1.0);
+      padMain->SetBottomMargin(0.0);
+      padMain->SetRightMargin(0.03);
+      padMain->SetLeftMargin(0.13);
+      padMain->Draw();
+      padMain->cd();
+      TH1* frame_canDiff_1 = (TH1*) gPad->DrawFrame(dXmin,-0.45,dXmax,1);
+      frame_canDiff_1->SetTitle(Form("%s v_{2}{2,%s} %s ; ; v_{2}{2}",sSpecies.Data(),sGap.Data(),sCentLabel.Data()));
+      frame_canDiff_1->SetTitleFont(43,"X");
+      frame_canDiff_1->SetTitleSize(18,"X");
+      frame_canDiff_1->SetTitleOffset(4.3,"X");
+      frame_canDiff_1->SetLabelFont(43,"X");
+      frame_canDiff_1->SetLabelSize(18,"X");
+      // frame_canDiff_1->SetTitleFont(43,"Y");
+      // frame_canDiff_1->SetTitleOffset(2.2,"Y");
+
+      canDiff->cd();
+      TPad* padRatio = new TPad("padRatio","padRatio", 0, 0.0, 1, 0.3);
+      padRatio->SetTopMargin(0.0);
+      padRatio->SetBottomMargin(0.25);
+      padRatio->SetRightMargin(0.03);
+      padRatio->SetLeftMargin(0.13);
+      padRatio->Draw();
+      padRatio->cd();
+      TH1* frame_canDiff_2 = (TH1*) gPad->DrawFrame(dXmin,0.50,dXmax,1.07);
+      frame_canDiff_2->SetTitle(Form("; p_{T} (GeV/c); mean / integrated   "));
+      frame_canDiff_2->SetNdivisions(505,"Y");
+      frame_canDiff_2->SetTitleFont(43,"XY");
+      frame_canDiff_2->SetTitleSize(18,"XY");
+      frame_canDiff_2->SetTitleOffset(4.3,"X");
+      frame_canDiff_2->SetTitleOffset(2.2,"Y");
+      frame_canDiff_2->SetLabelFont(43,"XY");
+      frame_canDiff_2->SetLabelSize(18,"XY");
+      lineUnity->Draw("same");
+
+      TFile* fileUnit = OpenFile(sInputPathUnit+sMethods[iMethod]+"/Processed.root","READ"); if(!fileUnit) return;
+      TFile* fileMerged = OpenFile(sInputPathMerged+sMethods[iMethod]+"/Processed.root","READ"); if(!fileMerged) return;
+
+      TH1D* histMerged = LoadHisto(Form("hFlow2_%s_harm2_%s_cent%d",sSpecies.Data(),sGap.Data(),0),fileMerged); if(!histMerged) return;
+      StyleHist(histMerged,kRed,kFullCircle);
+      histMerged->SetLineWidth(2);
+      leg->AddEntry(histMerged,"integrated","p");
+
+      TProfile* p_weight_sigma = new TProfile("p_weight_sigma","p_weight_sigma",histMerged->GetXaxis()->GetNbins(),histMerged->GetXaxis()->GetXbins()->GetArray());
+      if(!p_weight_sigma) { printf("Profile does not exists!\n"); return; }
+      p_weight_sigma->Sumw2();
+      StyleHist(p_weight_sigma,kViolet-1,kOpenSquare);
+
+      TProfile* p_weight_average = new TProfile("p_weight_average","p_weight_average",histMerged->GetXaxis()->GetNbins(),histMerged->GetXaxis()->GetXbins()->GetArray());
+      if(!p_weight_average) { printf("Profile does not exists!\n"); return; }
+      p_weight_average->Sumw2();
+      StyleHist(p_weight_average,kMagenta+2,kOpenSquare);
+
+      // hist for single pt bin distribution of v2 from differrent N_RFP bins
+      const Int_t iNumPtBins = histMerged->GetNbinsX()+2;
+      TH1D* histVnDist[iNumPtBins];
+      TH1D* histVnDistWeighted[iNumPtBins];
+      for(Int_t pt(0); pt < iNumPtBins; ++pt)
+      {
+        histVnDist[pt] = new TH1D(Form("histVnDist_pt%d",pt),Form("v_{2}{2,%s} %g < p_{T} < %g GeV/c; v_{2}{2,%s}; Counts",sGap.Data(),histMerged->GetBinLowEdge(pt+1),histMerged->GetBinLowEdge(pt+2),sGap.Data()), 140, -0.4,1.);
+        histVnDistWeighted[pt] = new TH1D(Form("histVnDistWeighted_pt%d",pt),Form("v_{2}{2,%s} (1/#sigma^{2} weight) %g < p_{T} < %g GeV/c; v_{2}{2,%s}; Counts (weighted)",sGap.Data(),histMerged->GetBinLowEdge(pt+1),histMerged->GetBinLowEdge(pt+2),sGap.Data()), 140, -0.4,1.);
+      }
+
+      TCanvas* canDist = new TCanvas("canDist","canDist",800,800);
 
 
-    Int_t nPnt  = iMultMax-iMultMin;
-    Int_t nnCol = gStyle->GetNumberOfColors();
+      Int_t nPnt  = iMultMax-iMultMin;
+      Int_t nnCol = gStyle->GetNumberOfColors();
 
-    Int_t iLegInx = 0;
-    for(Int_t iMult(iMultMin); iMult < iMultMax; ++iMult)
-    {
-      TString sHistoName = Form("hFlow2_%s_harm2_%s_cent%d",sSpecies.Data(),sGap.Data(),iMult);
+      Int_t iLegInx = 0;
+      for(Int_t iMult(iMultMin); iMult < iMultMax; ++iMult)
+      {
+        TString sHistoName = Form("hFlow2_%s_harm2_%s_cent%d",sSpecies.Data(),sGap.Data(),iMult);
 
-      TH1D* histUnit = LoadHisto(sHistoName,fileUnit); if(!histUnit) return;
+        TH1D* histUnit = LoadHisto(sHistoName,fileUnit); if(!histUnit) return;
 
-      Int_t idx = iMult * Float_t(nnCol-1) / (nPnt-1);
-      StyleHist(histUnit, gStyle->GetColorPalette(idx), kOpenCircle);
+        Int_t idx = iMult * Float_t(nnCol-1) / (nPnt-1);
+        StyleHist(histUnit, gStyle->GetColorPalette(idx), kOpenCircle);
+
+        padMain->cd();
+        histUnit->DrawCopy("hist p x0 same");
+        if(iMult == iMultMin) { leg->AddEntry(histUnit,Form("N_{RFP} bins (width %d)",iMultBinWidth),"p"); }
+        legBins[iLegInx]->AddEntry(histUnit,Form("%d",iMult*iMultBinWidth),"p");
+        if((iMult - iMultMin) % 50 == 49) { iLegInx++; }
+
+        for(Int_t pt(1); pt < histUnit->GetNbinsX()+1; ++pt)
+        {
+          Double_t bin = histUnit->GetBinCenter(pt);
+          Double_t dValue = histUnit->GetBinContent(pt);
+          Double_t dError = histUnit->GetBinError(pt);
+
+          if(dError <= 0.0001) continue;
+          if(dValue >= 8.0 && dError >= 8.0) continue;
+
+          Double_t dWeight = TMath::Power(dError,-2.0);
+          p_weight_average->Fill(bin,dValue,1.0);
+          p_weight_sigma->Fill(bin,dValue,dWeight);
+          if(iMethod == 0 && pt == histUnit->GetNbinsX() )
+          {
+            // printf("pT %d: Val %f | weight %f\n",pt,dValue,dWeight);
+            // printf("%f +- %f \n", dValue, dError);
+            if(dError <= 0.0000001) printf("ZERO \n");
+          }
+
+          // filling vn dist
+          histVnDist[pt-1]->Fill(dValue);
+          histVnDistWeighted[pt-1]->Fill(dValue, TMath::Power(dError,-2.0));
+        }
+      }
+
+      leg->AddEntry(p_weight_sigma,"1/#sigma^{2} weighted mean","p");
+      // leg->AddEntry(p_weight_average,"arithmeric mean","p");
+
+      // making histos out of profiles (for "safety" reason)
+      TH1D* h_weight_average = (TH1D*) p_weight_average->ProjectionX();
+      TH1D* h_weight_sigma = (TH1D*) p_weight_sigma->ProjectionX();
+      StyleHist(h_weight_average,kBlack,kOpenSquare);
+      StyleHist(h_weight_sigma,kViolet-1,kOpenSquare);
+      h_weight_sigma->SetLineWidth(2);
 
       padMain->cd();
-      histUnit->DrawCopy("hist p x0 same");
-      if(iMult == iMultMin) { leg->AddEntry(histUnit,Form("N_{RFP} bins (width %d)",iMultBinWidth),"p"); }
-      legBins[iLegInx]->AddEntry(histUnit,Form("%d",iMult*iMultBinWidth),"p");
-      if((iMult - iMultMin) % 50 == 49) { iLegInx++; }
+      histMerged->DrawCopy("same");
+      // h_weight_average->DrawCopy("same");
+      h_weight_sigma->DrawCopy("same");
+      leg->Draw();
 
-      for(Int_t pt(1); pt < histUnit->GetNbinsX()+1; ++pt)
+      padRatio->cd();
+      TH1D* hRatioSigma = DivideHistos(h_weight_sigma,histMerged);
+      TH1D* hRatioAverage = DivideHistos(h_weight_average,histMerged);
+      hRatioSigma->DrawCopy("hist p e1 same");
+      // hRatioAverage->DrawCopy("hist p e1 same");
+
+      canDiff->SaveAs(Form("%s/%s_%s.pdf",sOutputPath.Data(),sSpecies.Data(),sMethods[iMethod].Data()),"pdf");
+
+      canRatio->cd();
+      StyleHist(hRatioSigma,colors[iMethod],kOpenSquare);
+      hRatioSigma->DrawCopy("hist p e1 same");
+      legRatio->AddEntry(hRatioSigma,sMethodLabels[iMethod].Data(),"p");
+
+
+      TCanvas* canLegend = new TCanvas("canLegend","canLegend",200,1000);
+      canLegend->cd();
+      for(Int_t iLeg(0); iLeg < 3; ++iLeg) legBins[iLeg]->Draw();
+      canLegend->SaveAs(Form("%s/%s_%s.pdf",sOutputPath.Data(),sSpecies.Data(),"BinsLegend"),"pdf");
+
+      canCompMethod->cd(2);
+      StyleHist(histMerged,colors[iMethod],kOpenCircle);
+      histMerged->DrawCopy("hist p e1 same");
+      legMethods->AddEntry(histMerged,sMethodLabels[iMethod].Data(),"p");
+      legMethods->Draw();
+      canCompMethod->cd(1);
+      StyleHist(h_weight_sigma,colors[iMethod],kOpenSquare);
+      h_weight_sigma->DrawCopy("hist p e1 same");
+      legMethodsWeight->AddEntry(histMerged,sMethodLabels[iMethod].Data(),"p");
+      legMethodsWeight->Draw();
+
+      gSystem->mkdir(Form("%s/vn_dist_%s_%s/",sOutputPath.Data(),sSpecies.Data(),sMethods[iMethod].Data()),kTRUE);
+
+      TLine* lineMerged = new TLine();
+      lineMerged->SetLineColor(kRed);
+      lineMerged->SetLineWidth(3);
+      lineMerged->SetLineStyle(10);
+      TLine* lineWeight = new TLine();
+      lineWeight->SetLineColor(kViolet-1);
+      lineWeight->SetLineWidth(3);
+      for(Int_t pt(0); pt < iNumPtBins; ++pt)
       {
-        Double_t bin = histUnit->GetBinCenter(pt);
-        Double_t dValue = histUnit->GetBinContent(pt);
-        Double_t dError = histUnit->GetBinError(pt);
 
-        if(dError <= 0.0001) continue;
-        if(dValue >= 8.0 && dError >= 8.0) continue;
+        gPad->SetLogy(kFALSE);
+        canDist->cd();
+        histVnDist[pt]->SetStats(kFALSE);
+        histVnDist[pt]->Draw("hist");
+        lineWeight->DrawLine(h_weight_sigma->GetBinContent(pt+1), 0.0, h_weight_sigma->GetBinContent(pt+1), histVnDist[pt]->GetMaximum());
+        lineMerged->DrawLine(histMerged->GetBinContent(pt+1), 0.0, histMerged->GetBinContent(pt+1), histVnDist[pt]->GetMaximum());
+        canDist->SaveAs(Form("%s/vn_dist_%s_%s/Dist_pt%d.pdf",sOutputPath.Data(),sSpecies.Data(),sMethods[iMethod].Data(),pt),"pdf");
 
-        Double_t dWeight = TMath::Power(dError,-2.0);
-        p_weight_average->Fill(bin,dValue,1.0);
-        p_weight_sigma->Fill(bin,dValue,dWeight);
-        if(iMethod == 0 && pt == histUnit->GetNbinsX() )
-        {
-          // printf("pT %d: Val %f | weight %f\n",pt,dValue,dWeight);
-          // printf("%f +- %f \n", dValue, dError);
-          if(dError <= 0.0000001) printf("ZERO \n");
-        }
-
-        // filling vn dist
-        histVnDist[pt-1]->Fill(dValue);
-        histVnDistWeighted[pt-1]->Fill(dValue, TMath::Power(dError,-2.0));
+        gPad->SetLogy(kTRUE);
+        histVnDistWeighted[pt]->SetStats(kFALSE);
+        histVnDistWeighted[pt]->Draw("hist");
+        lineWeight->DrawLine(h_weight_sigma->GetBinContent(pt+1), 0.0, h_weight_sigma->GetBinContent(pt+1), histVnDistWeighted[pt]->GetMaximum());
+        lineMerged->DrawLine(histMerged->GetBinContent(pt+1), 0.0, histMerged->GetBinContent(pt+1), histVnDistWeighted[pt]->GetMaximum());
+        canDist->SaveAs(Form("%s/vn_dist_%s_%s/DistWeight_pt%d.pdf",sOutputPath.Data(),sSpecies.Data(),sMethods[iMethod].Data(),pt),"pdf");
       }
+
+
+      // saving to output file
+      fileOut->cd();
+      h_weight_sigma->Write(Form("hWeight_%s",sMethods[iMethod].Data()));
+      histMerged->Write(Form("hMerged_%s",sMethods[iMethod].Data()));
+
+
     }
-
-    leg->AddEntry(p_weight_sigma,"1/#sigma^{2} weighted mean","p");
-    // leg->AddEntry(p_weight_average,"arithmeric mean","p");
-
-    // making histos out of profiles (for "safety" reason)
-    TH1D* h_weight_average = (TH1D*) p_weight_average->ProjectionX();
-    TH1D* h_weight_sigma = (TH1D*) p_weight_sigma->ProjectionX();
-    StyleHist(h_weight_average,kBlack,kOpenSquare);
-    StyleHist(h_weight_sigma,kViolet-1,kOpenSquare);
-    h_weight_sigma->SetLineWidth(2);
-
-    padMain->cd();
-    histMerged->DrawCopy("same");
-    // h_weight_average->DrawCopy("same");
-    h_weight_sigma->DrawCopy("same");
-    leg->Draw();
-
-    padRatio->cd();
-    TH1D* hRatioSigma = DivideHistos(h_weight_sigma,histMerged);
-    TH1D* hRatioAverage = DivideHistos(h_weight_average,histMerged);
-    hRatioSigma->DrawCopy("hist p e1 same");
-    // hRatioAverage->DrawCopy("hist p e1 same");
-
-    canDiff->SaveAs(Form("%s/%s_%s.pdf",sOutputPath.Data(),sSpecies.Data(),sMethods[iMethod].Data()),"pdf");
-
-    canRatio->cd();
-    StyleHist(hRatioSigma,colors[iMethod],kOpenSquare);
-    hRatioSigma->DrawCopy("hist p e1 same");
-    legRatio->AddEntry(hRatioSigma,sMethodLabels[iMethod].Data(),"p");
-
-
-    TCanvas* canLegend = new TCanvas("canLegend","canLegend",200,1000);
-    canLegend->cd();
-    for(Int_t iLeg(0); iLeg < 3; ++iLeg) legBins[iLeg]->Draw();
-    canLegend->SaveAs(Form("%s/%s_%s.pdf",sOutputPath.Data(),sSpecies.Data(),"BinsLegend"),"pdf");
-
-    canCompMethod->cd(2);
-    StyleHist(histMerged,colors[iMethod],kOpenCircle);
-    histMerged->DrawCopy("hist p e1 same");
-    legMethods->AddEntry(histMerged,sMethodLabels[iMethod].Data(),"p");
-    legMethods->Draw();
-    canCompMethod->cd(1);
-    StyleHist(h_weight_sigma,colors[iMethod],kOpenSquare);
-    h_weight_sigma->DrawCopy("hist p e1 same");
-    legMethodsWeight->AddEntry(histMerged,sMethodLabels[iMethod].Data(),"p");
-    legMethodsWeight->Draw();
-
-    gSystem->mkdir(Form("%s/vn_dist_%s_%s/",sOutputPath.Data(),sSpecies.Data(),sMethods[iMethod].Data()),kTRUE);
-
-    TLine* lineMerged = new TLine();
-    lineMerged->SetLineColor(kRed);
-    lineMerged->SetLineWidth(3);
-    lineMerged->SetLineStyle(10);
-    TLine* lineWeight = new TLine();
-    lineWeight->SetLineColor(kViolet-1);
-    lineWeight->SetLineWidth(3);
-    for(Int_t pt(0); pt < iNumPtBins; ++pt)
-    {
-
-      gPad->SetLogy(kFALSE);
-      canDist->cd();
-      histVnDist[pt]->SetStats(kFALSE);
-      histVnDist[pt]->Draw("hist");
-      lineWeight->DrawLine(h_weight_sigma->GetBinContent(pt+1), 0.0, h_weight_sigma->GetBinContent(pt+1), histVnDist[pt]->GetMaximum());
-      lineMerged->DrawLine(histMerged->GetBinContent(pt+1), 0.0, histMerged->GetBinContent(pt+1), histVnDist[pt]->GetMaximum());
-      canDist->SaveAs(Form("%s/vn_dist_%s_%s/Dist_pt%d.pdf",sOutputPath.Data(),sSpecies.Data(),sMethods[iMethod].Data(),pt),"pdf");
-
-      gPad->SetLogy(kTRUE);
-      histVnDistWeighted[pt]->SetStats(kFALSE);
-      histVnDistWeighted[pt]->Draw("hist");
-      lineWeight->DrawLine(h_weight_sigma->GetBinContent(pt+1), 0.0, h_weight_sigma->GetBinContent(pt+1), histVnDistWeighted[pt]->GetMaximum());
-      lineMerged->DrawLine(histMerged->GetBinContent(pt+1), 0.0, histMerged->GetBinContent(pt+1), histVnDistWeighted[pt]->GetMaximum());
-      canDist->SaveAs(Form("%s/vn_dist_%s_%s/DistWeight_pt%d.pdf",sOutputPath.Data(),sSpecies.Data(),sMethods[iMethod].Data(),pt),"pdf");
-    }
-
-
-    // saving to output file
-    fileOut->cd();
-    h_weight_sigma->Write(Form("hWeight_%s",sMethods[iMethod].Data()));
-    histMerged->Write(Form("hMerged_%s",sMethods[iMethod].Data()));
-
-
+    canCompMethod->SaveAs(Form("%s/%s_%s.pdf",sOutputPath.Data(),sSpecies.Data(),"CompMethods"),"pdf");
+    canRatio->SaveAs(Form("%s/%s_%s.pdf",sOutputPath.Data(),sSpecies.Data(),"RATIO"),"pdf");
   }
-  canCompMethod->SaveAs(Form("%s/%s_%s.pdf",sOutputPath.Data(),sSpecies.Data(),"CompMethods"),"pdf");
-  canRatio->SaveAs(Form("%s/%s_%s.pdf",sOutputPath.Data(),sSpecies.Data(),"RATIO"),"pdf");
-
 
   return;
 }

@@ -26,26 +26,27 @@ TH1D* DivideHistos(TH1D* nom, TH1D* denom, Bool_t bCor = kFALSE);
 
 void PlotBinWidthDep()
 {
-  const Int_t iNumBinWidths = 6;
-  Int_t iBinWidths[iNumBinWidths] = {1,5,10,30,50,75};
+  // const Int_t iNumBinWidths = 5; Int_t iBinWidths[iNumBinWidths] = {1,5,10,30,45}; TString sCentLabel = "(pp, 0-100%% V0A)"; // pp
+  const Int_t iNumBinWidths = 6; Int_t iBinWidths[iNumBinWidths] = {1,5,10,30,50,75}; TString sCentLabel = "(pPb, 0-20%% V0A)";// pPB
 
   const Int_t iNumMethods = 3;
   TString sMethods[iNumMethods] = {"GF_eventweighted","GF_noneventweighted","SP_nonscaled_noneventweighted"/*,"SP_scaled_noneventweighted"*/};
   TString sMethodLabels[iNumMethods] = {"scaled vect. with weights", "scaled vect. w/o weights", "not scaled vect. w/o weights"};
 
+  TString sGap = "gap04";
+  TString sSpecies = "Charged";
 
-  // TLegend* leg = new TLegend(0.12,0.7,0.3,0.85);
-  TLegend* leg = new TLegend(0.6,0.05,0.95,0.4);
+
+
+  TLegend* leg = new TLegend(0.15,0.6,0.45,0.9);
+  // TLegend* leg = new TLegend(0.6,0.05,0.95,0.4);
   leg->SetBorderSize(0);
   leg->SetFillColorAlpha(0.,0.);
   leg->SetTextFont(42);
   leg->SetTextSize(0.04);
 
   TString sIntputFileName = "output.root";
-  TString sOutputPath = "/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/CompareMultFluctuationTest/pp_gap08/";
-
-  TString sGap = "gap08";
-  TString sSpecies = "Charged";
+  TString sOutputPath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/CompareMultFluctuationTest/pPb-NchRFP-%s/",sGap.Data());
 
   Double_t dXmin = 0.0;
   Double_t dXmax = 7.0;
@@ -73,7 +74,7 @@ void PlotBinWidthDep()
     padMain->Draw();
     padMain->cd();
     TH1* frame_canDiff_1 = (TH1*) gPad->DrawFrame(dXmin,-0.02,dXmax,0.35);
-    frame_canDiff_1->SetTitle(Form("%s v_{2}{2,%s} (0-20%% V0A) ; ; v_{2}{2}",sSpecies.Data(),sGap.Data()));
+    frame_canDiff_1->SetTitle(Form("%s v_{2}{2,%s} %s ; ; v_{2}{2}",sSpecies.Data(),sGap.Data(),sCentLabel.Data()));
     frame_canDiff_1->SetTitleFont(43,"X");
     frame_canDiff_1->SetTitleSize(18,"X");
     frame_canDiff_1->SetTitleOffset(4.3,"X");
@@ -90,7 +91,7 @@ void PlotBinWidthDep()
     padRatio->SetLeftMargin(0.13);
     padRatio->Draw();
     padRatio->cd();
-    TH1* frame_canDiff_2 = (TH1*) gPad->DrawFrame(dXmin,0.5,dXmax,1.5);
+    TH1* frame_canDiff_2 = (TH1*) gPad->DrawFrame(dXmin,0.85,dXmax,1.15);
     frame_canDiff_2->SetTitle(Form("; p_{T} (GeV/c); wide / unit bin  "));
     frame_canDiff_2->SetNdivisions(510,"Y");
     frame_canDiff_2->SetTitleFont(43,"XY");
@@ -112,7 +113,7 @@ void PlotBinWidthDep()
   for(Int_t iWidth(0); iWidth < iNumBinWidths; ++iWidth)
   {
     Int_t iMultBinWidth = iBinWidths[iWidth];
-    TString sInputFilePath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/CompareMultFluctuationTest/pp_gap08/%d/",iMultBinWidth);
+    TString sInputFilePath = Form("/Users/vpacik/NBI/Flow/uniFlow/results/flowsub/multiplicity-fluctuations/CompareMultFluctuationTest/pPb-NchRFP-%s/%d/",sGap.Data(),iMultBinWidth);
 
     TFile* fileIn = TFile::Open(Form("%s%s",sInputFilePath.Data(),sIntputFileName.Data()),"READ");
     if(!fileIn) { printf("ERROR: Input file not found!\n"); return; }
