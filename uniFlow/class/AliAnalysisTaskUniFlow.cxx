@@ -73,6 +73,7 @@
 #include "TH1D.h"
 #include "TH2D.h"
 #include "TH3D.h"
+#include "THnSparse.h"
 #include "TProfile.h"
 #include "TProfile2D.h"
 #include "TProfile3D.h"
@@ -760,6 +761,7 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow(const char* name) : AliAnalysisTa
     fh3QAPIDnSigmaBayesProton[iQA] = 0x0;
 
     // V0s
+    fhsQAV0s[iQA] = 0x0;
     fhQAV0sMultK0s[iQA] = 0x0;
     fhQAV0sMultLambda[iQA] = 0x0;
   	fhQAV0sRecoMethod[iQA] = 0x0;
@@ -1662,6 +1664,7 @@ void AliAnalysisTaskUniFlow::FilterV0s()
     if(!v0) continue;
 
     if(fFillQA) FillQAV0s(0,v0); // QA BEFORE selection
+    if(fFillQA) FillQAV0sNew(0,v0); // QA BEFORE selection
 
     if(IsV0Selected(v0))
     {
@@ -2096,6 +2099,215 @@ Bool_t AliAnalysisTaskUniFlow::IsV0Selected(const AliAODv0* v0)
   // passing all common criteria
   fhV0sCounter->Fill("Common passed",1);
   return kTRUE;
+}
+//_____________________________________________________________________________
+void AliAnalysisTaskUniFlow::FillQAV0sNew(const Short_t iQAindex, const AliAODv0* v0, const Bool_t bIsK0s, const Short_t bIsLambda)
+{
+  if(!v0) return;
+  AliAODTrack* trackDaughter[2] = {(AliAODTrack*) v0->GetDaughter(0), (AliAODTrack*) v0->GetDaughter(1)};
+  if(!trackDaughter[0] || !trackDaughter[1]) return;
+
+  // setting internal flags for Lambdas and Anti-Lambdas
+  Bool_t bCandLambda;
+  Bool_t bCandAntiLambda;
+
+  switch (bIsLambda)
+  {
+    case 1:
+    {
+      bCandLambda = kTRUE;
+      bCandAntiLambda = kFALSE;
+      break;
+    }
+    case -1:
+    {
+      bCandLambda = kFALSE;
+      bCandAntiLambda = kTRUE;
+      break;
+    }
+    case 2:
+    {
+      bCandLambda = kTRUE;
+      bCandAntiLambda = kTRUE;
+      break;
+    }
+    default:
+    {
+      bCandLambda = kFALSE;
+      bCandAntiLambda = kFALSE;
+    }
+  }
+
+  Double_t dFill[eQAV0s::kNumDim] = { 0.0 };
+  dFill[kInvMassK0s] = v0->MassK0Short();
+  dFill[kInvMassLambda] = v0->MassLambda();
+  dFill[kInvMassALambda] = v0->MassAntiLambda();
+  dFill[kV0Pt] = v0->Pt();
+  dFill[kV0Phi] = v0->Phi();
+  dFill[kV0Eta] = v0->Eta();
+
+  fhsQAV0s[iQAindex]->Fill(dFill);
+
+  // // reconstruction method
+  // fhQAV0sRecoMethod[iQAindex]->Fill(v0->GetOnFlyStatus());
+  //
+  // // DCA between daughters and PV
+  // fhQAV0sDCAtoPV[iQAindex]->Fill(v0->DcaPosToPrimVertex());
+  // fhQAV0sDCAtoPV[iQAindex]->Fill(v0->DcaNegToPrimVertex());
+  //
+  // // Daughter DCA among themselves
+  // fhQAV0sDCADaughters[iQAindex]->Fill(v0->DcaV0Daughters());
+  //
+  // // charge
+  // fhQAV0sMotherCharge[iQAindex]->Fill(v0->Charge());
+  //
+  // // radius of decay vertex in transverse plane
+  // Double_t dSecVtxCoor[3] = {0};
+  // v0->GetSecondaryVtx(dSecVtxCoor);
+  // Double_t dDecayRadius = TMath::Sqrt(dSecVtxCoor[0]*dSecVtxCoor[0] + dSecVtxCoor[1]*dSecVtxCoor[1]);
+  // fhQAV0sDecayRadius[iQAindex]->Fill(dDecayRadius);
+  //
+  // // mother kinematics
+  // fhQAV0sMotherPt[iQAindex]->Fill(v0->Pt());
+  // fhQAV0sMotherPhi[iQAindex]->Fill(v0->Phi());
+  // fhQAV0sMotherEta[iQAindex]->Fill(v0->Eta());
+  //
+  // // proper lifetime preparation (to be filled in particle dependent if scope)
+  // Double_t dPrimVtxCoor[3] = {0};
+  // Double_t dDecayCoor[3] = {0};
+  // AliAODVertex* primVtx2 = fEventAOD->GetPrimaryVertex();
+  // primVtx2->GetXYZ(dPrimVtxCoor);
+  // for(Int_t i(0); i < 2; i++)
+  //   dDecayCoor[i] = dSecVtxCoor[i] - dPrimVtxCoor[i];
+
+  // // particle dependent
+  // if(bIsK0s)
+  // {
+  //   // K0s
+  //   fhQAV0sMotherRapK0s[iQAindex]->Fill(v0->RapK0Short());
+  //   fhQAV0sInvMassK0s[iQAindex]->Fill(v0->MassK0Short());
+  //
+  //   // CPA
+  //   AliAODVertex* primVtx = fEventAOD->GetPrimaryVertex();
+  //   fhQAV0sCPAK0s[iQAindex]->Fill(v0->CosPointingAngle(primVtx));
+  //
+  //   // Armenteros-Podolanski
+  //   fhQAV0sArmenterosK0s[iQAindex]->Fill(v0->AlphaV0(), v0->PtArmV0());
+  //
+  //   // proper lifetime
+  //   Double_t dMassPDGK0s = TDatabasePDG::Instance()->GetParticle(kK0Short)->Mass();
+  //   Double_t dPropLifeK0s = ( (dMassPDGK0s / v0->Pt()) * TMath::Sqrt(dDecayCoor[0]*dDecayCoor[0] + dDecayCoor[1]*dDecayCoor[1]) );
+  //   fhQAV0sNumTauK0s[iQAindex]->Fill(dPropLifeK0s);
+  // }
+  // if(bCandLambda || bCandAntiLambda)
+  // {
+  //   // (Anti)Lambda
+  //   fhQAV0sMotherRapLambda[iQAindex]->Fill(v0->RapLambda());
+  //   fhQAV0sInvMassLambda[iQAindex]->Fill(v0->MassLambda());
+  //   fhQAV0sInvMassLambda[iQAindex]->Fill(v0->MassAntiLambda());
+  //
+  //   // CPA
+  //   AliAODVertex* primVtx = fEventAOD->GetPrimaryVertex();
+  //   fhQAV0sCPALambda[iQAindex]->Fill(v0->CosPointingAngle(primVtx));
+  //
+  //   // Armenteros-Podolanski
+  //   if(bCandLambda)
+  //     fhQAV0sArmenterosLambda[iQAindex]->Fill(v0->AlphaV0(), v0->PtArmV0());
+  //
+  //   if(bCandAntiLambda)
+  //     fhQAV0sArmenterosALambda[iQAindex]->Fill(v0->AlphaV0(), v0->PtArmV0());
+  //
+  //   // proper lifetime
+  //   Double_t dMassPDGLambda = TDatabasePDG::Instance()->GetParticle(kLambda0)->Mass();
+  //   Double_t dPropLifeLambda = ( (dMassPDGLambda / v0->Pt()) * TMath::Sqrt(dDecayCoor[0]*dDecayCoor[0] + dDecayCoor[1]*dDecayCoor[1]) );
+  //   fhQAV0sNumTauLambda[iQAindex]->Fill(dPropLifeLambda);
+  // }
+
+  // AliPIDResponse::EDetPidStatus pidStatusTPC;
+  // AliPIDResponse::EDetPidStatus pidStatusTOF;
+  // UShort_t numTPCfindable = 0;
+  // Float_t numTPCcrossed = 0;
+  //
+  // // daughters properties
+  // AliAODVertex* prodVtxDaughter = 0x0;
+  // for(Short_t i(0); i < 2; i++)
+  // {
+  //   // TPC refit
+  //   fhQAV0sDaughterTPCRefit[iQAindex]->Fill(trackDaughter[i]->IsOn(AliAODTrack::kTPCrefit));
+  //
+  //   // kinks
+  //   prodVtxDaughter = (AliAODVertex*) trackDaughter[i]->GetProdVertex();
+  //   fhQAV0sDaughterKinks[iQAindex]->Fill(prodVtxDaughter->GetType() == AliAODVertex::kKink);
+  //
+  //   // track quality
+  //   numTPCcrossed = trackDaughter[i]->GetTPCNCrossedRows();
+  //   numTPCfindable = trackDaughter[i]->GetTPCNclsF();
+  //   fhQAV0sDaughterNumTPCCls[iQAindex]->Fill(trackDaughter[i]->GetTPCNcls());
+  //   fhQAV0sDaughterNumTPCClsPID[iQAindex]->Fill(trackDaughter[i]->GetTPCsignalN());
+  //   fhQAV0sDaughterNumTPCFind[iQAindex]->Fill(numTPCfindable);
+  //   fhQAV0sDaughterNumTPCCrossRows[iQAindex]->Fill(numTPCcrossed);
+  //   if(numTPCfindable > 0.) fhQAV0sDaughterTPCCrossFindRatio[iQAindex]->Fill(numTPCcrossed/numTPCfindable); else fhQAV0sDaughterTPCCrossFindRatio[iQAindex]->Fill(-5.);
+  //
+  //   // detector status
+  //   pidStatusTPC = fPIDResponse->CheckPIDStatus(AliPIDResponse::kTPC, trackDaughter[i]);
+  //   pidStatusTOF = fPIDResponse->CheckPIDStatus(AliPIDResponse::kTOF, trackDaughter[i]);
+  //   fhQAV0sDaughterTPCstatus[iQAindex]->Fill((Int_t) pidStatusTPC );
+  //   fhQAV0sDaughterTOFstatus[iQAindex]->Fill((Int_t) pidStatusTOF );
+  //
+  //   // daughter kinematics
+  //   fhQAV0sDaughterPt[iQAindex]->Fill(trackDaughter[i]->Pt());
+  //   fhQAV0sDaughterPhi[iQAindex]->Fill(trackDaughter[i]->Phi());
+  //   fhQAV0sDaughterEta[iQAindex]->Fill(trackDaughter[i]->Eta());
+  //
+  //   // daughter charge
+  //   fhQAV0sDaughterCharge[iQAindex]->Fill(trackDaughter[i]->Charge());
+  // }
+  //
+  // AliPIDResponse::EDetPidStatus pidStatusTPCpos;
+  // AliPIDResponse::EDetPidStatus pidStatusTPCneg;
+  //
+  // // PID checks
+  // if(fPIDResponse)
+  // {
+  //   // checking the detector status
+  //   pidStatusTPCpos = fPIDResponse->CheckPIDStatus(AliPIDResponse::kTPC, trackDaughter[0]);
+  //   pidStatusTPCneg = fPIDResponse->CheckPIDStatus(AliPIDResponse::kTPC, trackDaughter[1]);
+  //
+  //   if(pidStatusTPCpos == AliPIDResponse::kDetPidOk && pidStatusTPCneg == AliPIDResponse::kDetPidOk)
+  //   {
+  //     if(bIsK0s)
+  //     {
+  //       // daughter PID
+  //       fhQAV0sDaughterTPCdEdxK0s[iQAindex]->Fill(trackDaughter[0]->P(), trackDaughter[0]->GetTPCsignal());
+  //       fhQAV0sDaughterTPCdEdxK0s[iQAindex]->Fill(trackDaughter[1]->P(), trackDaughter[1]->GetTPCsignal());
+  //
+  //       // Pion PID for daughters
+  //       fhQAV0sDaughterNumSigmaPionK0s[iQAindex]->Fill(v0->Pt(), fPIDResponse->NumberOfSigmasTPC(trackDaughter[0], AliPID::kPion));
+  //       fhQAV0sDaughterNumSigmaPionK0s[iQAindex]->Fill(v0->Pt(), fPIDResponse->NumberOfSigmasTPC(trackDaughter[1], AliPID::kPion));
+  //     }
+  //
+  //     if(bCandLambda || bCandAntiLambda)
+  //     {
+  //       // daughter PID
+  //       fhQAV0sDaughterTPCdEdxLambda[iQAindex]->Fill(trackDaughter[0]->P(), trackDaughter[0]->GetTPCsignal());
+  //       fhQAV0sDaughterTPCdEdxLambda[iQAindex]->Fill(trackDaughter[1]->P(), trackDaughter[1]->GetTPCsignal());
+  //
+  //       if(bCandLambda)
+  //       {
+  //         fhQAV0sDaughterNumSigmaProtonLambda[iQAindex]->Fill(v0->Pt(), fPIDResponse->NumberOfSigmasTPC(trackDaughter[0], AliPID::kProton));
+  //         fhQAV0sDaughterNumSigmaPionLambda[iQAindex]->Fill(v0->Pt(), fPIDResponse->NumberOfSigmasTPC(trackDaughter[1], AliPID::kPion));
+  //       }
+  //
+  //       if(bCandAntiLambda)
+  //       {
+  //         fhQAV0sDaughterNumSigmaProtonALambda[iQAindex]->Fill(v0->Pt(), fPIDResponse->NumberOfSigmasTPC(trackDaughter[1], AliPID::kProton));
+  //         fhQAV0sDaughterNumSigmaPionALambda[iQAindex]->Fill(v0->Pt(), fPIDResponse->NumberOfSigmasTPC(trackDaughter[0], AliPID::kPion));
+  //       }
+  //     }
+  //   }
+  // }
+
+  return;
 }
 //_____________________________________________________________________________
 void AliAnalysisTaskUniFlow::FillQAV0s(const Short_t iQAindex, const AliAODv0* v0, const Bool_t bIsK0s, const Short_t bIsLambda)
@@ -4310,6 +4522,26 @@ void AliAnalysisTaskUniFlow::UserCreateOutputObjects()
         // V0s QA
         if(fProcessV0s)
         {
+
+          Int_t dQAV0sBins[eQAV0s::kNumDim] = {0}; Double_t dQAV0sMin[eQAV0s::kNumDim]  = {0}; Double_t dQAV0sMax[eQAV0s::kNumDim] = {0}; TString sQAV0sLabels[eQAV0s::kNumDim];
+          sQAV0sLabels[kInvMassK0s] = "#it{m}_{inv}^{K0s} (GeV/#it{c}^{2});"; dQAV0sBins[kInvMassK0s] = 200; dQAV0sMin[kInvMassK0s] = fCutV0sInvMassK0sMin; dQAV0sMax[kInvMassK0s] = fCutV0sInvMassK0sMax;
+          sQAV0sLabels[kInvMassLambda] = "#it{m}_{inv}^{#Lambda} (GeV/#it{c}^{2});"; dQAV0sBins[kInvMassLambda] = 80; dQAV0sMin[kInvMassLambda] = fCutV0sInvMassLambdaMin; dQAV0sMax[kInvMassLambda] = fCutV0sInvMassLambdaMax;
+          sQAV0sLabels[kInvMassALambda] = "#it{m}_{inv}^{#bar{#Lambda}} (GeV/#it{c}^{2});"; dQAV0sBins[kInvMassALambda] = 80; dQAV0sMin[kInvMassALambda] = fCutV0sInvMassLambdaMin; dQAV0sMax[kInvMassALambda] = fCutV0sInvMassLambdaMax;
+          sQAV0sLabels[kV0Pt] = "#it{p}_{T}^{V0} (GeV/#it{c});"; dQAV0sBins[kV0Pt] = 200; dQAV0sMin[kV0Pt] = 0.0; dQAV0sMax[kV0Pt] = 20.0;
+          sQAV0sLabels[kV0Eta] = " #it{#eta}^{V0};"; dQAV0sBins[kV0Eta] = 151; dQAV0sMin[kV0Eta] = -1.5; dQAV0sMax[kV0Eta] = 1.5;
+          sQAV0sLabels[kV0Phi] = "#it{#varphi}^{V0} (GeV/#it{c});"; dQAV0sBins[kV0Phi] = 100; dQAV0sMin[kV0Phi] = 0.0; dQAV0sMax[kV0Phi] = TMath::TwoPi();
+          sQAV0sLabels[kV0Charge] = "V^{0} charge;"; dQAV0sBins[kV0Charge] = 3; dQAV0sMin[kV0Charge] = -1.5; dQAV0sMax[kV0Charge] = 1.5;
+          sQAV0sLabels[kDecayRadius] = "#it{r}_{xy}^{decay} (cm);"; dQAV0sBins[kDecayRadius] = 400; dQAV0sMin[kDecayRadius] = 0.0; dQAV0sMax[kDecayRadius] = 200.0;
+          sQAV0sLabels[kDCADaughters] = "DCA^{daughters} (cm);"; dQAV0sBins[kDCADaughters] = 200; dQAV0sMin[kDCADaughters] = 0.0; dQAV0sMax[kDCADaughters] = 20.0;
+
+
+          TString sQAV0sLabel = "QA V^{0}_{S};";
+          for(Int_t i(0); i < eQAV0s::kNumDim; ++i) { sQAV0sLabel += sQAV0sLabels[i]; }
+
+
+          fhsQAV0s[iQA] = new THnSparseD(Form("fhsQAV0s_%s", sQAindex[iQA].Data()), sQAV0sLabel.Data(), eQAV0s::kNumDim, dQAV0sBins, dQAV0sMin, dQAV0sMax);
+          fQAV0s->Add(fhsQAV0s[iQA]);
+
           fhQAV0sMultK0s[iQA] = new TH1D(Form("fhQAV0sMultK0s_%s",sQAindex[iQA].Data()),"QA V^{0}_{S}: Number of K^{0}_{S} candidates", 1000,0,1000);
           fQAV0s->Add(fhQAV0sMultK0s[iQA]);
           fhQAV0sMultLambda[iQA] = new TH1D(Form("fhQAV0sMultLambda_%s",sQAindex[iQA].Data()),"QA V^{0}_{S}: Number of #Lambda candidates", 1000,0,1000);

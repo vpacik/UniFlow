@@ -173,6 +173,7 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       void                    FillQACharged(const Short_t iQAindex, const AliAODTrack* track = 0x0); // filling QA plots for charged track selection
       void                    FillQAPID(const Short_t iQAindex, const AliAODTrack* track = 0x0, const PartSpecies species = kUnknown); // filling pi,K,p QA histograms
       void                    FillQAV0s(const Short_t iQAindex, const AliAODv0* v0 = 0x0, const Bool_t bIsK0s = kTRUE, const Short_t bIsLambda = 2); // filling QA plots for V0s candidates
+      void                    FillQAV0sNew(const Short_t iQAindex, const AliAODv0* v0 = 0x0, const Bool_t bIsK0s = kTRUE, const Short_t bIsLambda = 2); // filling QA plots for V0s candidates
       void                    FillQAPhi(const Short_t iQAindex, const AliPicoTrack* part = 0x0); // filling QA plots for V0s candidates
 
       // Flow related methods
@@ -536,6 +537,8 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       TH3D*           fh3QAPIDnSigmaBayesKaon[fiNumIndexQA]; //! PID information (nSigma TPC, nSigma TOF, Bayes) for kaons
       TH3D*           fh3QAPIDnSigmaBayesProton[fiNumIndexQA]; //! PID information (nSigma TPC, nSigma TOF, Bayes) for proton
       // QA: V0s candidates
+      enum eQAV0s { kInvMassK0s = 0, kInvMassLambda, kInvMassALambda, kV0Pt, kV0Eta, kV0Phi, kV0Charge, kDCADaughters, kDecayRadius, kNumDim };
+      THnSparseD*     fhsQAV0s[fiNumIndexQA]; //! V0s QA (sparse)
       TH1D*			  		fhQAV0sMultK0s[fiNumIndexQA];	//! number of K0s candidates
       TH1D*			  		fhQAV0sMultLambda[fiNumIndexQA];	//! number of Lambda candidates
       TH1D*			  		fhQAV0sMultALambda[fiNumIndexQA];	//! number of Anti-Lambda candidates
