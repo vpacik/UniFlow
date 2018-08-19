@@ -2138,7 +2138,10 @@ void AliAnalysisTaskUniFlow::FillQAV0sNew(const Short_t iQAindex, const AliAODv0
     }
   }
 
-  Double_t dFill[eQAV0s::kNumDim] = { 0.0 };
+  Double_t dFill[eQAV0s::kNumDim];
+  for(Int_t i(0); i < eQAV0s::kNumDim; ++i) { dFill[i] = -999.9; }
+
+
   dFill[kInvMassK0s] = v0->MassK0Short();
   dFill[kInvMassLambda] = v0->MassLambda();
   dFill[kInvMassALambda] = v0->MassAntiLambda();
@@ -2147,6 +2150,10 @@ void AliAnalysisTaskUniFlow::FillQAV0sNew(const Short_t iQAindex, const AliAODv0
   dFill[kV0Eta] = v0->Eta();
 
   fhsQAV0s[iQAindex]->Fill(dFill);
+
+  for(Int_t i(0); i < eQAV0s::kNumDim; ++i) { printf("%g | ",dFill[i]); }
+  printf("\n");
+
 
   // // reconstruction method
   // fhQAV0sRecoMethod[iQAindex]->Fill(v0->GetOnFlyStatus());
@@ -4530,14 +4537,16 @@ void AliAnalysisTaskUniFlow::UserCreateOutputObjects()
           sQAV0sLabels[kV0Pt] = "#it{p}_{T}^{V0} (GeV/#it{c});"; dQAV0sBins[kV0Pt] = 200; dQAV0sMin[kV0Pt] = 0.0; dQAV0sMax[kV0Pt] = 20.0;
           sQAV0sLabels[kV0Eta] = " #it{#eta}^{V0};"; dQAV0sBins[kV0Eta] = 151; dQAV0sMin[kV0Eta] = -1.5; dQAV0sMax[kV0Eta] = 1.5;
           sQAV0sLabels[kV0Phi] = "#it{#varphi}^{V0} (GeV/#it{c});"; dQAV0sBins[kV0Phi] = 100; dQAV0sMin[kV0Phi] = 0.0; dQAV0sMax[kV0Phi] = TMath::TwoPi();
+          sQAV0sLabels[kDaughterPt] = "#it{p}_{T}^{daughter} (GeV/#it{c});"; dQAV0sBins[kDaughterPt] = 200; dQAV0sMin[kDaughterPt] = 0.0; dQAV0sMax[kDaughterPt] = 20.0;
+          sQAV0sLabels[kDaughterEta] = " #it{#eta}^{daughter};"; dQAV0sBins[kDaughterEta] = 151; dQAV0sMin[kDaughterEta] = -1.5; dQAV0sMax[kDaughterEta] = 1.5;
+          sQAV0sLabels[kDaughterPhi] = "#it{#varphi}^{daughter} (GeV/#it{c});"; dQAV0sBins[kDaughterPhi] = 100; dQAV0sMin[kDaughterPhi] = 0.0; dQAV0sMax[kDaughterPhi] = TMath::TwoPi();
           sQAV0sLabels[kV0Charge] = "V^{0} charge;"; dQAV0sBins[kV0Charge] = 3; dQAV0sMin[kV0Charge] = -1.5; dQAV0sMax[kV0Charge] = 1.5;
+          sQAV0sLabels[kDaughterCharge] = "Daughter charge;"; dQAV0sBins[kDaughterCharge] = 3; dQAV0sMin[kDaughterCharge] = -1.5; dQAV0sMax[kDaughterCharge] = 1.5;
           sQAV0sLabels[kDecayRadius] = "#it{r}_{xy}^{decay} (cm);"; dQAV0sBins[kDecayRadius] = 400; dQAV0sMin[kDecayRadius] = 0.0; dQAV0sMax[kDecayRadius] = 200.0;
           sQAV0sLabels[kDCADaughters] = "DCA^{daughters} (cm);"; dQAV0sBins[kDCADaughters] = 200; dQAV0sMin[kDCADaughters] = 0.0; dQAV0sMax[kDCADaughters] = 20.0;
 
-
           TString sQAV0sLabel = "QA V^{0}_{S};";
           for(Int_t i(0); i < eQAV0s::kNumDim; ++i) { sQAV0sLabel += sQAV0sLabels[i]; }
-
 
           fhsQAV0s[iQA] = new THnSparseD(Form("fhsQAV0s_%s", sQAindex[iQA].Data()), sQAV0sLabel.Data(), eQAV0s::kNumDim, dQAV0sBins, dQAV0sMin, dQAV0sMax);
           fQAV0s->Add(fhsQAV0s[iQA]);

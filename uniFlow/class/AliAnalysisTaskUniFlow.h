@@ -537,7 +537,7 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       TH3D*           fh3QAPIDnSigmaBayesKaon[fiNumIndexQA]; //! PID information (nSigma TPC, nSigma TOF, Bayes) for kaons
       TH3D*           fh3QAPIDnSigmaBayesProton[fiNumIndexQA]; //! PID information (nSigma TPC, nSigma TOF, Bayes) for proton
       // QA: V0s candidates
-      enum eQAV0s { kInvMassK0s = 0, kInvMassLambda, kInvMassALambda, kV0Pt, kV0Eta, kV0Phi, kV0Charge, kDCADaughters, kDecayRadius, kNumDim };
+      enum eQAV0s { kInvMassK0s = 0, kInvMassLambda, kInvMassALambda, kV0Pt, kV0Eta, kV0Phi, kV0Charge, kDCADaughters, kDecayRadius, kDaughterPt, kDaughterEta, kDaughterPhi, kDaughterCharge, kNumDim };
       THnSparseD*     fhsQAV0s[fiNumIndexQA]; //! V0s QA (sparse)
       TH1D*			  		fhQAV0sMultK0s[fiNumIndexQA];	//! number of K0s candidates
       TH1D*			  		fhQAV0sMultLambda[fiNumIndexQA];	//! number of Lambda candidates
