@@ -1557,6 +1557,7 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
   TH3D* histEntries = 0x0;
   TH3D* histEntriesBg = 0x0;
   TString sProfileName = TString();
+  TString sProfileNameFour = TString();
   TString sHistoName = TString();
   TString sHistoNameBg = TString();
   Bool_t bIsPhi = (task->fSpecies == FlowTask::kPhi);
@@ -1568,20 +1569,29 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
     case FlowTask::kPhi :
       listFlow = flFlowPhi;
       sProfileName = Form("fp3PhiCorr_%s<2>_harm%d_gap%s",fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data());
-      sHistoName = Form("fhsPhiCandSig");
-      sHistoNameBg = Form("fhsPhiCandBg");
+      sProfileNameFour = Form("fp3PhiCorr_%s<4>_harm%d_gap%s",fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data());
+      // sHistoName = Form("fhsPhiCandSig");
+      // sHistoNameBg = Form("fhsPhiCandBg");
+      sHistoName = Form("fh3PhiEntriesSignal_gap%s_Pos",task->GetEtaGapString().Data());
+      sHistoNameBg = Form("fh3PhiEntriesBG_gap%s_Pos",task->GetEtaGapString().Data());
+
     break;
 
     case FlowTask::kK0s :
       listFlow = flFlowK0s;
       sProfileName = Form("fp3V0sCorr%s_%s<2>_harm%d_gap%s",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data());
-      sHistoName = Form("fhsV0sCandK0s");
+      sProfileNameFour = Form("fp3V0sCorr%s_%s<4>_harm%d_gap%s",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data());
+      // sHistoName = Form("fhsV0sCandK0s");
+      sHistoName = Form("fh3V0sEntriesK0s_gap%s_Pos",task->GetEtaGapString().Data());
+
     break;
 
     case FlowTask::kLambda :
       listFlow = flFlowLambda;
       sProfileName = Form("fp3V0sCorr%s_%s<2>_harm%d_gap%s",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data());
-      sHistoName = Form("fhsV0sCandLambda");
+      sProfileNameFour = Form("fp3V0sCorr%s_%s<4>_harm%d_gap%s",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data());
+      // sHistoName = Form("fhsV0sCandLambda");
+      sHistoName = Form("fh3V0sEntriesLambda_gap%s_Pos",task->GetEtaGapString().Data());
     break;
 
     default:
@@ -1589,13 +1599,21 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
       return kFALSE;
   }
 
-  // new naming convention for input histos (from FlowTask)
-  TString sProfTwoName = Form("<<2>>(%d,-%d)",task->fHarmonics, task->fHarmonics);
-  TString sProfFourName = Form("<<4>>(%d,%d,-%d,-%d)",task->fHarmonics, task->fHarmonics, task->fHarmonics, task->fHarmonics);
-  if(task->fEtaGap > -1.0) {
-    sProfTwoName += Form("_2sub(%.2g)",task->fEtaGap);
-    sProfFourName += Form("_2sub(%.2g)",task->fEtaGap);
-  }
+  // // new naming convention for input histos (from FlowTask)
+  // TString sProfTwoName = Form("<<2>>(%d,-%d)",task->fHarmonics, task->fHarmonics);
+  // TString sProfFourName = Form("<<4>>(%d,%d,-%d,-%d)",task->fHarmonics, task->fHarmonics, task->fHarmonics, task->fHarmonics);
+  // if(task->fEtaGap > -1.0) {
+  //   sProfTwoName += Form("_2sub(%.2g)",task->fEtaGap);
+  //   sProfFourName += Form("_2sub(%.2g)",task->fEtaGap);
+  // }
+
+  // old naming convention for input histos (from FlowTask)
+  TString sProfTwoName = sProfileName;
+  TString sProfFourName = sProfileNameFour;
+  // if(task->fEtaGap > -1.0) {
+  //   sProfTwoName += Form("_2sub(%.2g)",task->fEtaGap);
+  //   sProfFourName += Form("_2sub(%.2g)",task->fEtaGap);
+  // }
 
   sProfileName = sProfTwoName;
 
@@ -1604,94 +1622,96 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
   Double_t dEtaGap = task->fEtaGap;
   Debug(Form("dEtaGap %f", dEtaGap),"ProcessReconstructed");
 
-  if(dEtaGap < 0.0)
-  {
-    Debug("No eta slicing","ProcessReconstructed");
+  // if(dEtaGap < 0.0)
+  // {
+  //   Debug("No eta slicing","ProcessReconstructed");
+  //
+  //   THnSparseD* hsEntries = (THnSparseD*) listFlow->FindObject(sHistoName.Data());
+  //   if(!hsEntries) { Error(Form("Entries histo '%s' not found!",sHistoName.Data()),"ProcessReconstructed"); listFlow->ls(); return kFALSE; }
+  //   histEntries = (TH3D*) hsEntries->Projection(1,2,0);
+  //
+  //   if(bIsPhi)
+  //   {
+  //     THnSparseD* hsEntriesBG = (THnSparseD*) listFlow->FindObject(sHistoNameBg.Data());
+  //     if(!hsEntriesBG) { Error(Form("Entries histo '%s' not found!",sHistoNameBg.Data()),"ProcessReconstructed"); listFlow->ls(); return kFALSE; }
+  //     histEntriesBg = (TH3D*) hsEntriesBG->Projection(1,2,0);
+  //   }
+  // }
+  // else
+  // {
+  //   Debug("Has etagap","ProcessReconstructed");
+  //   THnSparseD* hsEntries = (THnSparseD*) listFlow->FindObject(sHistoName.Data());
+  //   if(!hsEntries) { Error(Form("Entries histo '%s' not found!",sHistoName.Data()),"ProcessReconstructed"); listFlow->ls(); return kFALSE; }
+  //
+  //   TAxis* axEta = hsEntries->GetAxis(3);
+  //   axEta->SetRangeUser(dEtaGap/2.0,axEta->GetXmax());
+  //   TH3D* histEntriesPos = (TH3D*) hsEntries->Projection(1,2,0);
+  //
+  //   // negative
+  //   axEta->SetRangeUser(axEta->GetXmin(),-dEtaGap/2.0);
+  //   TH3D* histEntriesNeg = (TH3D*) hsEntries->Projection(1,2,0);
+  //
+  //   if(task->fMergePosNeg)
+  //   {
+  //     TList* listMerge = new TList();
+  //     listMerge->Add(histEntriesPos);
+  //     listMerge->Add(histEntriesNeg);
+  //
+  //     histEntries = (TH3D*) listMerge->At(0)->Clone();
+  //     histEntries->Reset();
+  //     Double_t mergeStatus = histEntries->Merge(listMerge);
+  //     if(mergeStatus == -1) { Error("Merging unsuccesfull","ProcessReconstructed"); return kFALSE; }
+  //     delete listMerge;
+  //   }
+  //   else
+  //   {
+  //     // loading single histo (positive by default)
+  //     if(task->fInputTag.EqualTo("")) { histEntries = histEntriesPos; }
+  //     else if (task->fInputTag.EqualTo("Neg")) { histEntries = histEntriesNeg; }
+  //     else { Error(Form("Invalid InputTag '%s'!",task->fInputTag.Data()),"ProcessReconstructed"); return kFALSE; }
+  //   }
+  //
+  //   // same for phi BG
+  //   if(bIsPhi)
+  //   {
+  //     THnSparseD* hsEntriesBG = (THnSparseD*) listFlow->FindObject(sHistoNameBg.Data());
+  //     if(!hsEntriesBG) { Error(Form("Entries histo '%s' not found!",sHistoNameBg.Data()),"ProcessReconstructed"); listFlow->ls(); return kFALSE; }
+  //     histEntriesBg = (TH3D*) hsEntriesBG->Projection(1,2,0);
+  //
+  //     TAxis* axEta = hsEntriesBG->GetAxis(3);
+  //     axEta->SetRangeUser(dEtaGap/2.0,axEta->GetXmax());
+  //     TH3D* histEntriesBgPos = (TH3D*) hsEntriesBG->Projection(1,2,0);
+  //
+  //     // negative
+  //     axEta->SetRangeUser(axEta->GetXmin(),-dEtaGap/2.0);
+  //     TH3D* histEntriesBgNeg = (TH3D*) hsEntries->Projection(1,2,0);
+  //
+  //     if(task->fMergePosNeg)
+  //     {
+  //       TList* listMerge = new TList();
+  //       listMerge->Add(histEntriesBgPos);
+  //       listMerge->Add(histEntriesBgNeg);
+  //
+  //       histEntriesBg = (TH3D*) listMerge->At(0)->Clone();
+  //       histEntriesBg->Reset();
+  //       Double_t mergeStatus = histEntriesBg->Merge(listMerge);
+  //       if(mergeStatus == -1) { Error("Merging unsuccesfull","ProcessReconstructed"); return kFALSE; }
+  //       delete listMerge;
+  //     }
+  //     else
+  //     {
+  //       // loading single histo (positive by default)
+  //       if(task->fInputTag.EqualTo("")) { histEntriesBg = histEntriesBgPos; }
+  //       else if (task->fInputTag.EqualTo("Neg")) { histEntriesBg = histEntriesBgNeg; }
+  //       else { Error(Form("Invalid InputTag '%s'!",task->fInputTag.Data()),"ProcessReconstructed"); return kFALSE; }
+  //     }
+  //   }
+  // }
 
-    THnSparseD* hsEntries = (THnSparseD*) listFlow->FindObject(sHistoName.Data());
-    if(!hsEntries) { Error(Form("Entries histo '%s' not found!",sHistoName.Data()),"ProcessReconstructed"); listFlow->ls(); return kFALSE; }
-    histEntries = (TH3D*) hsEntries->Projection(1,2,0);
-
-    if(bIsPhi)
-    {
-      THnSparseD* hsEntriesBG = (THnSparseD*) listFlow->FindObject(sHistoNameBg.Data());
-      if(!hsEntriesBG) { Error(Form("Entries histo '%s' not found!",sHistoNameBg.Data()),"ProcessReconstructed"); listFlow->ls(); return kFALSE; }
-      histEntriesBg = (TH3D*) hsEntriesBG->Projection(1,2,0);
-    }
-  }
-  else
-  {
-    Debug("Has etagap","ProcessReconstructed");
-    THnSparseD* hsEntries = (THnSparseD*) listFlow->FindObject(sHistoName.Data());
-    if(!hsEntries) { Error(Form("Entries histo '%s' not found!",sHistoName.Data()),"ProcessReconstructed"); listFlow->ls(); return kFALSE; }
-
-    TAxis* axEta = hsEntries->GetAxis(3);
-    axEta->SetRangeUser(dEtaGap/2.0,axEta->GetXmax());
-    TH3D* histEntriesPos = (TH3D*) hsEntries->Projection(1,2,0);
-
-    // negative
-    axEta->SetRangeUser(axEta->GetXmin(),-dEtaGap/2.0);
-    TH3D* histEntriesNeg = (TH3D*) hsEntries->Projection(1,2,0);
-
-    if(task->fMergePosNeg)
-    {
-      TList* listMerge = new TList();
-      listMerge->Add(histEntriesPos);
-      listMerge->Add(histEntriesNeg);
-
-      histEntries = (TH3D*) listMerge->At(0)->Clone();
-      histEntries->Reset();
-      Double_t mergeStatus = histEntries->Merge(listMerge);
-      if(mergeStatus == -1) { Error("Merging unsuccesfull","ProcessReconstructed"); return kFALSE; }
-      delete listMerge;
-    }
-    else
-    {
-      // loading single histo (positive by default)
-      if(task->fInputTag.EqualTo("")) { histEntries = histEntriesPos; }
-      else if (task->fInputTag.EqualTo("Neg")) { histEntries = histEntriesNeg; }
-      else { Error(Form("Invalid InputTag '%s'!",task->fInputTag.Data()),"ProcessReconstructed"); return kFALSE; }
-    }
-
-    // same for phi BG
-    if(bIsPhi)
-    {
-      THnSparseD* hsEntriesBG = (THnSparseD*) listFlow->FindObject(sHistoNameBg.Data());
-      if(!hsEntriesBG) { Error(Form("Entries histo '%s' not found!",sHistoNameBg.Data()),"ProcessReconstructed"); listFlow->ls(); return kFALSE; }
-      histEntriesBg = (TH3D*) hsEntriesBG->Projection(1,2,0);
-
-      TAxis* axEta = hsEntriesBG->GetAxis(3);
-      axEta->SetRangeUser(dEtaGap/2.0,axEta->GetXmax());
-      TH3D* histEntriesBgPos = (TH3D*) hsEntriesBG->Projection(1,2,0);
-
-      // negative
-      axEta->SetRangeUser(axEta->GetXmin(),-dEtaGap/2.0);
-      TH3D* histEntriesBgNeg = (TH3D*) hsEntries->Projection(1,2,0);
-
-      if(task->fMergePosNeg)
-      {
-        TList* listMerge = new TList();
-        listMerge->Add(histEntriesBgPos);
-        listMerge->Add(histEntriesBgNeg);
-
-        histEntriesBg = (TH3D*) listMerge->At(0)->Clone();
-        histEntriesBg->Reset();
-        Double_t mergeStatus = histEntriesBg->Merge(listMerge);
-        if(mergeStatus == -1) { Error("Merging unsuccesfull","ProcessReconstructed"); return kFALSE; }
-        delete listMerge;
-      }
-      else
-      {
-        // loading single histo (positive by default)
-        if(task->fInputTag.EqualTo("")) { histEntriesBg = histEntriesBgPos; }
-        else if (task->fInputTag.EqualTo("Neg")) { histEntriesBg = histEntriesBgNeg; }
-        else { Error(Form("Invalid InputTag '%s'!",task->fInputTag.Data()),"ProcessReconstructed"); return kFALSE; }
-      }
-    }
-  }
-
-  if(!histEntries) { Error("Entries histo not ready!","ProcessReconstructed"); return kFALSE; }
-  if(bIsPhi && !histEntriesBg) { Error("Entries histo with BG not ready!","ProcessReconstructed"); return kFALSE; }
+  histEntries = (TH3D*) listFlow->FindObject(sHistoName.Data());
+  if(bIsPhi) { histEntriesBg = (TH3D*) listFlow->FindObject(sHistoNameBg.Data()); }
+  if(!histEntries) { Error("Entries histo not ready!","ProcessReconstructed"); listFlow->ls(); return kFALSE; }
+  if(bIsPhi && !histEntriesBg) { Error("Entries histo with BG not ready!","ProcessReconstructed"); listFlow->ls(); return kFALSE; }
   Debug("Entries histos ready!","ProcessReconstructed");
 
   // ### Preparing (un-sliced) correlation profile
@@ -1699,8 +1719,8 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
   {
     // loading Pos & Neg if fMergePosNeg is ON
     // merging profiles
-    TProfile3D* profFlowPos = (TProfile3D*) listFlow->FindObject(Form("%s_Pos_sample0",sProfileName.Data()));
-    TProfile3D* profFlowNeg = (TProfile3D*) listFlow->FindObject(Form("%s_Neg_sample0",sProfileName.Data()));
+    TProfile3D* profFlowPos = (TProfile3D*) listFlow->FindObject(Form("%s_Pos",sProfileName.Data()));
+    TProfile3D* profFlowNeg = (TProfile3D*) listFlow->FindObject(Form("%s_Neg",sProfileName.Data()));
     if(!profFlowPos || !profFlowNeg) { Error(Form("Pos OR Neg profile '%s' not found for Pos&Neg merging.",sProfileName.Data()),"ProcessReconstructed"); listFlow->ls(); return kFALSE; }
 
     TList* listMerge = new TList();
@@ -1716,7 +1736,7 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
   else
   {
     // loading single profile
-    if(task->fInputTag.EqualTo("")) { sProfileName.Append("_Pos_sample0"); }
+    if(task->fInputTag.EqualTo("")) { sProfileName.Append("_Pos"); }
     else { sProfileName.Append("_"); sProfileName.Append(task->fInputTag); }
     profFlow = (TProfile3D*) listFlow->FindObject(sProfileName.Data());
   }
@@ -1727,7 +1747,7 @@ Bool_t ProcessUniFlow::ProcessReconstructed(FlowTask* task,Short_t iMultBin)
   TProfile3D* profFlowFour = 0x0;
   if(task->fDoFour)
   {
-    profFlowFour = (TProfile3D*) listFlow->FindObject(Form("%s_Pos_sample0",sProfFourName.Data()));
+    profFlowFour = (TProfile3D*) listFlow->FindObject(Form("%s",sProfFourName.Data()));
     if(!profFlowFour) { Error(Form("Profile '%s' not found for Pos&Neg merging.",sProfFourName.Data()),"ProcessReconstructed"); listFlow->ls(); return kFALSE; }
     if(task->fMergePosNeg) { Warning("Implemented for ONLY Pos <<4>>. Skipping Neg!","ProcessReconstructed"); }
   }
