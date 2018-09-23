@@ -554,11 +554,11 @@ Bool_t ProcessUniFlow::LoadLists()
   if(!flFlowRefs) { Fatal("flFlow_Refs list does not exists!","LoadLists"); ffInputFile->ls(); return kFALSE; }
   flFlowCharged = (TList*) gDirectory->Get(Form("Flow_Charged_%s",fsTaskName.Data()));
   if(!flFlowCharged) { Fatal("flFlow_Charged list does not exists!","LoadLists"); return kFALSE; }
-  flFlowPion = (TList*) gDirectory->Get(Form("Flow_Pion_%s",fsTaskName.Data()));
+  flFlowPion = (TList*) gDirectory->Get(Form("Flow_PID_%s",fsTaskName.Data()));
   if(!flFlowPion) { Fatal("'flFlowPion' list does not exists!","LoadLists"); return kFALSE; }
-  flFlowKaon = (TList*) gDirectory->Get(Form("Flow_Kaon_%s",fsTaskName.Data()));
+  flFlowKaon = (TList*) gDirectory->Get(Form("Flow_PID_%s",fsTaskName.Data()));
   if(!flFlowKaon) { Fatal("'flFlowKaon' list does not exists!","LoadLists"); return kFALSE; }
-  flFlowProton = (TList*) gDirectory->Get(Form("Flow_Proton_%s",fsTaskName.Data()));
+  flFlowProton = (TList*) gDirectory->Get(Form("Flow_PID_%s",fsTaskName.Data()));
   if(!flFlowProton) { Fatal("'flFlowProton' list does not exists!","LoadLists"); return kFALSE; }
   flFlowPhi = (TList*) gDirectory->Get(Form("Flow_Phi_%s",fsTaskName.Data()));
   if(!flFlowPhi) { Fatal("flFlow_Phi list does not exists!","LoadLists"); return kFALSE; }
@@ -769,30 +769,30 @@ Bool_t ProcessUniFlow::ProcessRefs(FlowTask* task)
     profMult_rebin->Write(profMult_rebin->GetName());
   }
 
-  // new naming convention for input histos (from FlowTask)
-  TString sProfTwoName = Form("<<2>>(%d,-%d)",task->fHarmonics, task->fHarmonics);
-  TString sProfFourName = Form("<<4>>(%d,%d,-%d,-%d)",task->fHarmonics, task->fHarmonics, task->fHarmonics, task->fHarmonics);
-  if(task->fEtaGap > -1.0) {
-    sProfTwoName += Form("_2sub(%.2g)",task->fEtaGap);
-    sProfFourName += Form("_2sub(%.2g)",task->fEtaGap);
-  }
+  // // new naming convention for input histos (from FlowTask)
+  // TString sProfTwoName = Form("<<2>>(%d,-%d)",task->fHarmonics, task->fHarmonics);
+  // TString sProfFourName = Form("<<4>>(%d,%d,-%d,-%d)",task->fHarmonics, task->fHarmonics, task->fHarmonics, task->fHarmonics);
+  // if(task->fEtaGap > -1.0) {
+  //   sProfTwoName += Form("_2sub(%.2g)",task->fEtaGap);
+  //   sProfFourName += Form("_2sub(%.2g)",task->fEtaGap);
+  // }
 
   Debug("Processing samples","ProcessRefs");
   for(Short_t iSample(0); iSample < task->fNumSamples; ++iSample)
   {
-    TProfile* pCorTwo = (TProfile*) flFlowRefs->FindObject(Form("%s_Pos_sample%d",sProfTwoName.Data(), iSample));
-    if(!pCorTwo) { Warning(Form("Profile '%s' not valid",Form("%s_Pos_sample%d",sProfTwoName.Data(), iSample)),"ProcesRefs"); flFlowRefs->ls(); return kFALSE; }
-    // TProfile* pCorTwo = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<2>_harm%d_gap%s_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data(),iSample));
-    // if(!pCorTwo) { Warning(Form("Profile 'pCorTwo' (sample %d) not valid",iSample),"ProcesRefs"); flFlowRefs->ls(); return kFALSE; }
+    // TProfile* pCorTwo = (TProfile*) flFlowRefs->FindObject(Form("%s_Pos_sample%d",sProfTwoName.Data(), iSample));
+    // if(!pCorTwo) { Warning(Form("Profile '%s' not valid",Form("%s_Pos_sample%d",sProfTwoName.Data(), iSample)),"ProcesRefs"); flFlowRefs->ls(); return kFALSE; }
+    TProfile* pCorTwo = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<2>_harm%d_gap%s_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data(),iSample));
+    if(!pCorTwo) { Warning(Form("Profile 'pCorTwo' (sample %d) not valid",iSample),"ProcesRefs"); flFlowRefs->ls(); return kFALSE; }
 
     // Process 4-particle correlations
     TProfile* pCorFour = 0x0;
     if(bDoFour)
     {
-      pCorFour = (TProfile*) flFlowRefs->FindObject(Form("%s_Pos_sample%d",sProfFourName.Data(),iSample));
-      if(!pCorFour) { Warning(Form("Profile '%s' not valid!",Form("%s_Pos_sample%d",sProfFourName.Data(),iSample)),"ProcesRefs"); flFlowRefs->ls(); return kFALSE; }
-      // pCorFour = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<4>_harm%d_gap%s_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data(),iSample));
-      // if(!pCorFour) { Warning(Form("Profile 'pCorFour' (sample %d) not valid!",iSample),"ProcesRefs"); flFlowRefs->ls(); return kFALSE; }
+      // pCorFour = (TProfile*) flFlowRefs->FindObject(Form("%s_Pos_sample%d",sProfFourName.Data(),iSample));
+      // if(!pCorFour) { Warning(Form("Profile '%s' not valid!",Form("%s_Pos_sample%d",sProfFourName.Data(),iSample)),"ProcesRefs"); flFlowRefs->ls(); return kFALSE; }
+      pCorFour = (TProfile*) flFlowRefs->FindObject(Form("fpRefs_%s<4>_harm%d_gap%s_sample%d",fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data(),iSample));
+      if(!pCorFour) { Warning(Form("Profile 'pCorFour' (sample %d) not valid!",iSample),"ProcesRefs"); flFlowRefs->ls(); return kFALSE; }
     }
 
     // rebinning the profiles
@@ -1290,13 +1290,19 @@ Bool_t ProcessUniFlow::ProcessDirect(FlowTask* task, Short_t iMultBin)
 
   Debug("Processing samples","ProcessDirect");
 
-  // new naming convention for input histos (from FlowTask)
-  TString sProfTwoName = Form("<<2>>(%d,-%d)",task->fHarmonics, task->fHarmonics);
-  TString sProfFourName = Form("<<4>>(%d,%d,-%d,-%d)",task->fHarmonics, task->fHarmonics, task->fHarmonics, task->fHarmonics);
-  if(task->fEtaGap > -1.0) {
-    sProfTwoName += Form("_2sub(%.2g)",task->fEtaGap);
-    sProfFourName += Form("_2sub(%.2g)",task->fEtaGap);
-  }
+  // // new naming convention for input histos (from FlowTask)
+  // TString sProfTwoName = Form("<<2>>(%d,-%d)",task->fHarmonics, task->fHarmonics);
+  // TString sProfFourName = Form("<<4>>(%d,%d,-%d,-%d)",task->fHarmonics, task->fHarmonics, task->fHarmonics, task->fHarmonics);
+  // if(task->fEtaGap > -1.0) {
+  //   sProfTwoName += Form("_2sub(%.2g)",task->fEtaGap);
+  //   sProfFourName += Form("_2sub(%.2g)",task->fEtaGap);
+  // }
+
+  // old naming convention for input histos
+
+  TString sProfTwoName = Form("fp2%s_%s<2>_harm%d_gap%s",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data());
+  TString sProfFourName = Form("fp2%s_%s<4>_harm%d_gap%s",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data());
+
 
   for(Short_t iSample(0); iSample < task->fNumSamples; iSample++)
   {
@@ -1326,7 +1332,7 @@ Bool_t ProcessUniFlow::ProcessDirect(FlowTask* task, Short_t iMultBin)
       else // loading "non-standardly" named profile
       { p2CorTwoDif = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<2>_harm%d_gap%s_%s_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data(),task->fInputTag.Data(),iSample)); }
     }
-    if(!p2CorTwoDif) { Error(Form("Profile '%s' (sample %d) does not exists.",sProfTwoName.Data(),iSample),"ProcessDirect"); return kFALSE; }
+    if(!p2CorTwoDif) { Error(Form("Profile '%s' (sample %d) does not exists.",sProfTwoName.Data(),iSample),"ProcessDirect"); listInput->ls(); return kFALSE; }
 
     // <<4'>>
     TProfile2D* p2CorFourDif = 0x0;
@@ -1337,7 +1343,7 @@ Bool_t ProcessUniFlow::ProcessDirect(FlowTask* task, Short_t iMultBin)
         // loading pos & neg if fMergePosNeg is ON
         TProfile2D* prof2pos = (TProfile2D*) listInput->FindObject(Form("%s_Pos_sample%d",sProfFourName.Data(),iSample));
         TProfile2D* prof2neg = (TProfile2D*) listInput->FindObject(Form("%s_Neg_sample%d",sProfFourName.Data(),iSample));
-        if(!prof2pos || !prof2neg) { Error("<4>: Pos & Neg profile merging: 'prof2pos' OR 'prof2neg' not found!.","ProcessDirect"); return kFALSE; }
+        if(!prof2pos || !prof2neg) { Error("<4>: Pos & Neg profile merging: 'prof2pos' OR 'prof2neg' not found!.","ProcessDirect"); listInput->ls(); return kFALSE; }
 
         // merging pos & neg
         TList* listMerge = new TList();
@@ -1351,7 +1357,7 @@ Bool_t ProcessUniFlow::ProcessDirect(FlowTask* task, Short_t iMultBin)
       {
         // loading single (Pos) profile
         if(task->fInputTag.EqualTo("")) // loading default-ly named profile
-        { p2CorFourDif = (TProfile2D*) listInput->FindObject(Form("%s_Pos_sample%d",sProfFourName.Data(),iSample)); }
+        { p2CorFourDif = (TProfile2D*) listInput->FindObject(Form("%s_sample%d",sProfFourName.Data(),iSample)); }
         else // loading "non-standardly" named profile
         { p2CorFourDif = (TProfile2D*) listInput->FindObject(Form("fp2%s_%s<4>_harm%d_gap%s_%s_sample%d",task->GetSpeciesName().Data(),fsGlobalProfNameLabel.Data(),task->fHarmonics,task->GetEtaGapString().Data(),task->fInputTag.Data(),iSample)); }
       }
