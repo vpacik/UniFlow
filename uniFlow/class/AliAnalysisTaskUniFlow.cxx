@@ -1082,12 +1082,24 @@ Bool_t AliAnalysisTaskUniFlow::IsEventSelected()
   // events passing physics && trigger selection
   fhEventCounter->Fill("Physics selection OK",1);
 
+  // Naghmeg Event Selection
+  Bool_t bEventSelectedNaghmeh = IsEventSelected_Naghmeh();
+  if(bEventSelectedNaghmeh) { fhEventCounter->Fill("Naghmeh OK",1); }
+  if(!bEventSelectedNaghmeh) { return kFALSE; }
+
   // events passing AliEventCuts selection
-  if(!fEventCuts.AcceptEvent(fEventAOD)) { return kFALSE; }
-  fhEventCounter->Fill("EventCuts OK",1);
+  Bool_t bIsOK = fEventCuts.AcceptEvent(fEventAOD);
+  // if(!fEventCuts.AcceptEvent(fEventAOD)) { return kFALSE; }
+  if(bIsOK) { fhEventCounter->Fill("EventCuts OK",1); }
+  if(!bIsOK) return kFALSE;
 
   // Additional pile-up rejection cuts for LHC15o dataset
-  if(fColSystem == kPbPb && fEventRejectAddPileUp && IsEventRejectedAddPileUp()) { return kFALSE; }
+  Bool_t bPileUp = (fColSystem == kPbPb && fEventRejectAddPileUp && IsEventRejectedAddPileUp());
+  if(bPileUp) { return kFALSE; }
+  // if(fColSystem == kPbPb && fEventRejectAddPileUp && IsEventRejectedAddPileUp()) { return kFALSE; }
+
+
+  if(!bIsOK || bPileUp || !bEventSelectedNaghmeh) { return kFALSE; }
 
   return kTRUE;
 }
@@ -1183,6 +1195,120 @@ Bool_t AliAnalysisTaskUniFlow::IsEventSelected_oldsmall2016()
     return kFALSE;
   }
   fhEventCounter->Fill("PV #it{z} OK",1);
+
+  return kTRUE;
+}
+//_____________________________________________________________________________
+Bool_t AliAnalysisTaskUniFlow::IsEventSelected_Naghmeh()
+{
+  AliAnalysisManager* mgr = AliAnalysisManager::GetAnalysisManager();
+  AliInputEventHandler* inputHandler = (AliInputEventHandler*) mgr->GetInputEventHandler();
+
+  UInt_t fSelectMask = inputHandler->IsEventSelected();
+  Bool_t isTriggerSelected = kFALSE;
+  isTriggerSelected = fSelectMask& AliVEvent::kINT7;
+
+  if(!isTriggerSelected) { return kFALSE; }
+
+  AliMultSelection* fMultSelection = 0x0;
+  fMultSelection = (AliMultSelection*) fEventAOD->FindListObject("MultSelection");
+  Double_t centrV0M = fMultSelection->GetMultiplicityPercentile("V0M");
+  Double_t centrCL1 = fMultSelection->GetMultiplicityPercentile("CL1");
+
+  if(fabs(centrV0M - centrCL1)>7.5) return kFALSE;
+
+
+  const AliAODVertex* vtx = dynamic_cast<const AliAODVertex*>(fEventAOD->GetPrimaryVertex());
+  if(!vtx || vtx->GetNContributors() < 1){ return kFALSE; }
+
+  const AliAODVertex* vtxSPD = dynamic_cast<const AliAODVertex*>(fEventAOD->GetPrimaryVertexSPD());
+  if (((AliAODHeader*)fEventAOD->GetHeader())->GetRefMultiplicityComb08() < 0) return kFALSE;
+
+   if (fEventAOD->IsIncompleteDAQ()) return kFALSE;
+
+   if (vtx->GetNContributors() < 2 || vtxSPD->GetNContributors()<1) return kFALSE;
+
+   double cov[6]={0}; double covSPD[6]={0};
+
+   vtx->GetCovarianceMatrix(cov);
+
+   vtxSPD->GetCovarianceMatrix(covSPD);
+
+  double zRes = TMath::Sqrt(covSPD[5]);
+
+   double fMaxResol=0.25;
+
+   if ( vtxSPD->IsFromVertexerZ() && (zRes>fMaxResol)) return kFALSE;
+
+   AliAnalysisUtils utils;
+   utils.SetMinPlpContribMV(5);
+   utils.SetMaxPlpChi2MV(5);
+   utils.SetMinWDistMV(15);
+   utils.SetCheckPlpFromDifferentBCMV(kTRUE);
+
+   Bool_t isPileupFromMV = utils.IsPileUpMV(fEventAOD);
+
+   if(isPileupFromMV) return kFALSE;
+
+   double dz = vtx->GetZ() - vtxSPD->GetZ();
+
+   double errTot = TMath::Sqrt(cov[5]+covSPD[5]);
+
+   double err = TMath::Sqrt(cov[5]);
+
+   double nsigTot = dz/errTot;
+
+   double nsig = dz/err;
+
+   if (TMath::Abs(dz)>0.2 || TMath::Abs(nsigTot)>10 || TMath::Abs(nsig)>20) return kFALSE;
+
+  const Double_t aodVtxZ = vtx->GetZ();
+
+   if( TMath::Abs(aodVtxZ) > fPVtxCutZ ){return kFALSE;}
+
+  const Int_t nTracks = fEventAOD->GetNumberOfTracks();
+   Int_t multEsd = ((AliAODHeader*)fEventAOD->GetHeader())->GetNumberOfESDTracks();
+   Int_t multTrk = 0;
+   //Int_t multTrkBefC = 0;
+   Int_t multTrkTOF = 0;
+   Int_t multTPC = 0;
+   for (Int_t it = 0; it < nTracks; it++) {
+      AliAODTrack* AODTrk = (AliAODTrack*)fEventAOD->GetTrack(it);
+      if (!AODTrk){ delete AODTrk; continue; }
+      if (AODTrk->TestFilterBit(128)) {multTPC++;}
+      if (AODTrk->TestFilterBit(32)){
+          multTrk++;
+          if ( TMath::Abs(AODTrk->GetTOFsignalDz()) <= 10 && AODTrk->GetTOFsignal() >= 12000 && AODTrk->GetTOFsignal() <= 25000) multTrkTOF++;
+     }
+   }
+
+
+   Bool_t fExtraPileUp = kTRUE;
+
+   Double_t multTPCn = multTPC;
+
+  Double_t multEsdn = multEsd;
+
+   Double_t multESDTPCDif = multEsdn - multTPCn*3.38;
+
+   if (multESDTPCDif > 700) return kFALSE;//15000   TPC vs ESD mult. cut
+
+   Double_t multTrkn = multTrk;
+   Double_t multTrkTOFn = multTrkTOF;
+
+   if(fExtraPileUp && multTrkTOFn< (-32+ 0.32*multTrkn+0.000037*multTrkn*multTrkn)) return kFALSE;  // pileup from out of bunch using TOF
+
+   if(fExtraPileUp && multTrkTOFn> (13+0.46*multTrkn+0.000018*multTrkn*multTrkn)) return kFALSE; // pileup from out of bunch using TOF
+
+   // fIndexCentrality = GetCentralityIndex();
+   // if(fIndexCentrality < 0) return kFALSE; // return; not succesfull estimation
+   // Double_t Mult = fSelectedCharged->size();
+
+   // if(fExtraPileUp && fIndexCentrality< (-1.5*TMath::Power(Mult,0.46)-0.6*TMath::Log(Mult)*TMath::Log(Mult)+81)) return kFALSE; //5σ cut on the multiplicity-centrality correlation
+   // if(fExtraPileUp && fIndexCentrality>(-2.3*TMath::Power(Mult,0.39)-0.9*TMath::Log(Mult)*TMath::Log(Mult)+110)) return kFALSE;//5σ cut on the multiplicity-centrality correlation
+
+
+
 
   return kTRUE;
 }
@@ -3661,7 +3787,7 @@ void AliAnalysisTaskUniFlow::UserCreateOutputObjects()
     fh2EventCentralityNumRefs = new TH2D("fh2EventCentralityNumRefs",Form("Event centrality (%s) vs. N_{RFP}; %s; N_{RFP}",GetMultiEstimatorLabel(fMultEstimator), GetMultiEstimatorLabel(fMultEstimator)), iMultNumBins,fFlowCentMin,fFlowCentMax, 150,0,150);
     fQAEvents->Add(fh2EventCentralityNumRefs);
 
-    TString sEventCounterLabel[] = {"Input","Physics selection OK","EventCuts OK","Event OK","#RPFs OK","Multiplicity OK","Selected"};
+    TString sEventCounterLabel[] = {"Input","Physics selection OK","EventCuts OK","Event OK","PileUp OK","Naghmeh OK","#RPFs OK","Multiplicity OK","Selected"};
     const Short_t iEventCounterBins = sizeof(sEventCounterLabel)/sizeof(sEventCounterLabel[0]);
     fhEventCounter = new TH1D("fhEventCounter","Event Counter",iEventCounterBins,0,iEventCounterBins);
     for(Short_t i(0); i < iEventCounterBins; i++) fhEventCounter->GetXaxis()->SetBinLabel(i+1, sEventCounterLabel[i].Data() );

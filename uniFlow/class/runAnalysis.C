@@ -22,7 +22,7 @@ void runAnalysis()
 
     // Pb-Pb Run2 5.02 TeV (Run2) : RunList_LHC15o_pass1_pidfix_CentralBarrelTracking_hadronPID_20161018_v0.txt [6 runs]
     TString sPeriod = "2015/LHC15o"; TString sPass = "pass1_pidfix"; Int_t runNumber[] = {
-      245232, 245231, 245152, 245151, 245146, 245145
+      245231, 245152, 245151, 245146, 245145
     };
     // Pb-Pb Run2 5.02 TeV (Run2) : RunList_LHC15o_pass1_CentralBarrelTracking_hadronPID_20161130_v6.txt [77 runs]
     // TString sPeriod = "2015/LHC15o"; TString sPass = "pass1"; Int_t runNumber[] = {
@@ -101,6 +101,7 @@ void runAnalysis()
 
     task1->SetAnalysisType(AliAnalysisTaskUniFlow::kAOD);
     task1->SetRunMode(AliAnalysisTaskUniFlow::kFull);
+    task1->SetRejectAddPileUp(1);
     task1->SetNumEventsAnalyse(1);
     task1->SetMC(kFALSE);
     task1->SetSampling(0);
@@ -176,7 +177,8 @@ void runAnalysis()
     if(local) {
         // if you want to run locally, we need to define some input
         TChain* chain = new TChain("aodTree");
-        chain->Add("~/Codes/ALICE/Flow/data/2016/LHC16l/000259888/pass1/AOD/001/AliAOD.root");
+        // chain->Add("~/Codes/ALICE/Flow/data/2016/LHC16l/000259888/pass1/AOD/001/AliAOD.root");
+        chain->Add("~/Codes/ALICE/Flow/data/2015/LHC15o/000245232/pass1_pidfix/AOD194/0001/AliAOD.root");
         // chain->Add("~/NBI/Flow/data/2016/LHC16q/000265427/pass1_CENT_wSDD/AOD/001/AliAOD.root");
         mgr->StartAnalysis("local", chain); // start the analysis locally, reading the events from the TChain
     } else {
