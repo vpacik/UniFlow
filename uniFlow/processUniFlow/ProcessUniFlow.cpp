@@ -2387,7 +2387,11 @@ Bool_t ProcessUniFlow::PrepareSlicesNew(FlowTask* task, TString histName, Bool_t
     }
   }
 
-  if(fbSaveSlices && !SaveSlices(task)) { Error("","PrepareSlicesNew"); return kFALSE; }
+  if(fbSaveSlices) {
+    // due to naming convention
+    if(!task->fProcessMixed) { Warning("SaveSlices() implemented for Mixed harmonics only so far! Skipping!","PrepareSlicesNew"); return kTRUE; }
+    if(!SaveSlices(task)) { Error("Save Slices failed!","PrepareSlicesNew"); return kFALSE; }
+  }
 
 
   return kTRUE;
@@ -2572,8 +2576,50 @@ Bool_t ProcessUniFlow::SaveSlices(FlowTask* task)
 {
   if(!task) { Error("FlowTask does not exist!","SaveSlices"); return kFALSE; }
 
+  TList* listProfiles = task->fListProfiles;
+  TList* listHistos = task->fListHistos;
 
+  gSystem->mkdir(Form("%s/slices/",fsOutputFilePath.Data()),1);
 
+  TLatex latex;
+  latex.SetNDC();
+
+  TCanvas* canSlices = new TCanvas("canSlices", "canSlices", 1600,800);
+
+  for(Int_t iMultBin(0); iMultBin < fiNumMultBins; ++iMultBin) {
+    for(Int_t iPtBin(0); iPtBin < task->fNumPtBins; ++iPtBin) {
+
+      TString sHistoName = Form("hInvMass_mult%d_pt%d",iMultBin,iPtBin);
+      TString sProfName = Form("%s_Pos_sample0_mult%d_pt%d",task->fMixedDiff.Data(),iMultBin,iPtBin);
+
+      TH1D* hInvMass = (TH1D*) listHistos->FindObject(sHistoName.Data());
+      if(!hInvMass) { Error(Form("Inv.Mass slice '%s' not found!",sHistoName.Data()),"SaveSlices"); listHistos->ls(); delete canSlices; return kFALSE; }
+
+      TProfile* hFlowMass = (TProfile*) listProfiles->FindObject(sProfName.Data());
+      if(!hFlowMass) { Error(Form("Flow.Mass slice '%s' not found!",sProfName.Data()),"SaveSlices"); listProfiles->ls(); delete canSlices; return kFALSE; }
+
+      canSlices->Clear();
+      canSlices->Divide(2,1);
+
+      canSlices->cd(1);
+      hInvMass->GetXaxis()->SetTitle("M_{#phi} (GeV/c^{2})");
+      hInvMass->SetMarkerStyle(20);
+      hInvMass->SetStats(0);
+      hInvMass->SetMinimum(0);
+      hInvMass->DrawCopy();
+      latex.DrawLatex(0.17,0.80,Form("#color[9]{Enries = %.3g}",hInvMass->GetEntries()));
+
+      canSlices->cd(2);
+      hFlowMass->GetXaxis()->SetTitle("M_{#phi} (GeV/c^{2})");
+      hFlowMass->SetMarkerStyle(20);
+      hFlowMass->SetStats(0);
+      hFlowMass->DrawCopy();
+
+      canSlices->SaveAs(Form("%s/slices/slices_%s_%s.%s",fsOutputFilePath.Data(),task->GetSpeciesName().Data(),sProfName.Data(),fsOutputFileFormat.Data()),fsOutputFileFormat.Data());
+    }
+  }
+
+  delete canSlices;
   return kTRUE;
 }
 //_____________________________________________________________________________
