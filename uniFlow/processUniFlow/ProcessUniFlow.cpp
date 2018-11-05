@@ -283,6 +283,7 @@ class ProcessUniFlow
     void        SetOutputFileMode(const char* mode = "RECREATE") { fsOutputFileMode = mode; }
     void        SetTaskName(const char* name) { fsTaskName = name; }
     void        SetSaveSlices(Bool_t save = kTRUE) { fbSaveSlices = save; }
+    void        SetNoFitting(Bool_t save = kTRUE) { fbNoFitting = save; } //
     void        SetGlobalProfNameLabel(const char* label = "") { fsGlobalProfNameLabel = label; } // add global profile label for all tasks NOTE: for the purpose of Flow sub
     void        SetSaveMult(Bool_t bSave = kTRUE) { fbSaveMult = bSave; } // save reference multiplicity
     void        SetMultiplicityBins(std::vector<Double_t> array) { fdMultBins = array; fiNumMultBins = (Int_t) array.size() - 1; } // setup the global multiplicity binning, where size is number of elements in array
@@ -361,6 +362,7 @@ class ProcessUniFlow
     TString     fsOutputFileFormat; // [pdf] format of output files (pictures)
     TString     fsGlobalProfNameLabel; // global profile label for all task
     Bool_t      fbSaveSlices; // [kTRUE] save slices of reconstructed particles
+    Bool_t      fbNoFitting; // [kFALSE] skip fitting part for reconstructed for debugging processes or for Slicing only
     Bool_t      fbSaveMult; // [kFALSE]
     Bool_t      fFlowFitCumulants; // [kFALSE]
 
@@ -392,6 +394,7 @@ ProcessUniFlow::ProcessUniFlow() :
   fbDebug(kFALSE),
   fbInit(kFALSE),
   fbSaveSlices(kTRUE),
+  fbNoFitting(kFALSE),
   fbSaveMult(kFALSE),
   fFlowFitCumulants(kFALSE),
   fSaveInterSteps(kFALSE),
@@ -610,6 +613,7 @@ Bool_t ProcessUniFlow::ProcessTask(FlowTask* task)
       listSlicesProfiles->Write("MakeProfileSlices",TObject::kSingleKey);
       listSlicesHistos->Write("MakeHistosSlices",TObject::kSingleKey);
     }
+    if(fbNoFitting) { Warning("No fitting flag is ON, skipping Processing!","ProcessTask"); return kTRUE; }
 
     if(!ProcessMixed(task)) { Error("ProcessMixed failed!","ProcessTask"); return kFALSE; }
 
