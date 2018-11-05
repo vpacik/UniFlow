@@ -370,6 +370,7 @@ class ProcessUniFlow
     TFile*      ffInputFile; //! input file container
     TFile*      ffOutputFile; //! output file container
     TFile*      ffDesampleFile; //! output file for results of desampling
+    TFile*      ffSlicesFile; //! output file for slices
     TFile*      ffFitsFile; //! output file for fitting procedure
     TList*      flFlowRefs; //! TList from input file with RFPs flow profiles
     TList*      flFlowCharged; //! TList from input file with Charged flow profiles
@@ -398,6 +399,7 @@ ProcessUniFlow::ProcessUniFlow() :
   fiNumMultBins(0),
   ffInputFile(0x0),
   ffOutputFile(0x0),
+  ffSlicesFile(0x0),
   ffFitsFile(0x0),
   ffDesampleFile(0x0),
   flFlowRefs(0x0),
@@ -526,6 +528,11 @@ Bool_t ProcessUniFlow::Initialize()
   // creating output file for Desampling
   ffDesampleFile = TFile::Open(Form("%s/desampling.root",fsOutputFilePath.Data()),fsOutputFileMode.Data());
   if(!ffDesampleFile) { Fatal(Form("Output desampling file '%s/desampling.root' not open!","Initialize")); return kFALSE; }
+
+  if(fbSaveSlices) {
+    ffSlicesFile = TFile::Open(Form("%s/slices.root",fsOutputFilePath.Data()),fsOutputFileMode.Data());
+    if(!ffSlicesFile)  { Fatal(Form("Output slices file '%s/slices.root' not open!","Initialize")); return kFALSE; }
+  }
 
   // creating output file for fits
   ffFitsFile = TFile::Open(Form("%s/fits.root",fsOutputFilePath.Data()),fsOutputFileMode.Data());
@@ -2580,6 +2587,10 @@ Bool_t ProcessUniFlow::SaveSlices(FlowTask* task)
   TList* listHistos = task->fListHistos;
 
   gSystem->mkdir(Form("%s/slices/",fsOutputFilePath.Data()),1);
+
+  ffSlicesFile->cd();
+  listProfiles->Write(Form("listProfiles"),TObject::kSingleKey);
+  listHistos->Write(Form("listHistos"),TObject::kSingleKey);
 
   TLatex latex;
   latex.SetNDC();
