@@ -2400,7 +2400,7 @@ Bool_t ProcessUniFlow::PrepareSlicesNew(FlowTask* task, TString histName, Bool_t
     }
   }
 
-  if(fbSaveSlices) {
+  if(fbSaveSlices && bReco) {
     // due to naming convention
     if(!task->fProcessMixed) { Warning("SaveSlices() implemented for Mixed harmonics only so far! Skipping!","PrepareSlicesNew"); return kTRUE; }
     if(!SaveSlices(task)) { Error("Save Slices failed!","PrepareSlicesNew"); return kFALSE; }
@@ -2619,15 +2619,16 @@ Bool_t ProcessUniFlow::SaveSlices(FlowTask* task)
       canSlices->Divide(2,1);
 
       canSlices->cd(1);
-      hInvMass->GetXaxis()->SetTitle("M_{#phi} (GeV/c^{2})");
+      hInvMass->GetXaxis()->SetTitle("M_{inv} (GeV/c^{2})");
       hInvMass->SetMarkerStyle(20);
       hInvMass->SetStats(0);
       hInvMass->SetMinimum(0);
       hInvMass->DrawCopy();
       latex.DrawLatex(0.17,0.80,Form("#color[9]{Enries = %.3g}",hInvMass->GetEntries()));
+      latex.DrawLatex(0.17,0.75,Form("#color[9]{mult %.0f-%.0f | pt %0.1f - %0.1f}",fdMultBins[iMultBin],fdMultBins[iMultBin+1],task->fPtBinsEdges[iPtBin],task->fPtBinsEdges[iPtBin+1]));
 
       canSlices->cd(2);
-      hFlowMass->GetXaxis()->SetTitle("M_{#phi} (GeV/c^{2})");
+      hFlowMass->GetXaxis()->SetTitle("M_{inv} (GeV/c^{2})");
       hFlowMass->SetMarkerStyle(20);
       hFlowMass->SetStats(0);
       hFlowMass->DrawCopy();
