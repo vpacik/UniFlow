@@ -282,7 +282,7 @@ class ProcessUniFlow
     void        SetOutputFileName(const char* name) { fsOutputFileName = name; }
     void        SetOutputFileMode(const char* mode = "RECREATE") { fsOutputFileMode = mode; }
     void        SetTaskName(const char* name) { fsTaskName = name; }
-    void        SetSaveSlices(Bool_t save = kTRUE) { fbSaveSlices = save; }
+    void        SetSaveSlices(Bool_t save = kTRUE) { fbSaveSlices = save; } // save prepared slices to output file
     void        SetNoFitting(Bool_t save = kTRUE) { fbNoFitting = save; } //
     void        SetGlobalProfNameLabel(const char* label = "") { fsGlobalProfNameLabel = label; } // add global profile label for all tasks NOTE: for the purpose of Flow sub
     void        SetSaveMult(Bool_t bSave = kTRUE) { fbSaveMult = bSave; } // save reference multiplicity
@@ -614,6 +614,8 @@ Bool_t ProcessUniFlow::ProcessTask(FlowTask* task)
       listSlicesHistos->Write("MakeHistosSlices",TObject::kSingleKey);
     }
     if(fbNoFitting) { Warning("No fitting flag is ON, skipping Processing!","ProcessTask"); return kTRUE; }
+    listSlicesProfiles->Write("MakeProfileSlices",TObject::kSingleKey);
+    listSlicesHistos->Write("MakeHistosSlices",TObject::kSingleKey);
 
     if(!ProcessMixed(task)) { Error("ProcessMixed failed!","ProcessTask"); return kFALSE; }
 
@@ -2593,8 +2595,8 @@ Bool_t ProcessUniFlow::SaveSlices(FlowTask* task)
   gSystem->mkdir(Form("%s/slices/",fsOutputFilePath.Data()),1);
 
   ffSlicesFile->cd();
-  listProfiles->Write(Form("listProfiles"),TObject::kSingleKey);
-  listHistos->Write(Form("listHistos"),TObject::kSingleKey);
+  listProfiles->Write(Form("%s_listProfiles",task->GetSpeciesName().Data()),TObject::kSingleKey);
+  listHistos->Write(Form("%s_listHistos",task->GetSpeciesName().Data()),TObject::kSingleKey);
 
   TLatex latex;
   latex.SetNDC();
