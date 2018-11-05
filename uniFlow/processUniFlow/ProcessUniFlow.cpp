@@ -282,6 +282,7 @@ class ProcessUniFlow
     void        SetOutputFileName(const char* name) { fsOutputFileName = name; }
     void        SetOutputFileMode(const char* mode = "RECREATE") { fsOutputFileMode = mode; }
     void        SetTaskName(const char* name) { fsTaskName = name; }
+    void        SetSaveSlices(Bool_t save = kTRUE) { fbSaveSlices = save; }
     void        SetGlobalProfNameLabel(const char* label = "") { fsGlobalProfNameLabel = label; } // add global profile label for all tasks NOTE: for the purpose of Flow sub
     void        SetSaveMult(Bool_t bSave = kTRUE) { fbSaveMult = bSave; } // save reference multiplicity
     void        SetMultiplicityBins(std::vector<Double_t> array) { fdMultBins = array; fiNumMultBins = (Int_t) array.size() - 1; } // setup the global multiplicity binning, where size is number of elements in array
@@ -306,6 +307,7 @@ class ProcessUniFlow
     Bool_t      PrepareSlicesNew(FlowTask* task, TString histName, Bool_t bDoCand = kTRUE); // wrapper for making/preparing per-task slices
     Bool_t      MakeProfileSlices(FlowTask* task, TH1* inputProf, TList* outList); // prepare slices out of inputHist
     Bool_t      MakeSparseSlices(FlowTask* task, THnSparse* inputSparse, TList* outList, const char* outName = "hInvMass"); // prepare slices out of 'inputSparse'
+    Bool_t      SaveSlices(FlowTask* task); // save prepared slices into a (sepated) output file
 
     TH1D*       CalcRefCumTwo(TProfile* hTwoRef, FlowTask* task); // calculate cn{2} out of correlation
     TH1D*       CalcRefCumFour(TProfile* hFourRef, TProfile* hTwoRef, FlowTask* task, Bool_t bCorrel = kFALSE); // calculate cn{4} out of correlation
@@ -358,6 +360,7 @@ class ProcessUniFlow
     TString     fsTaskName; // name of task (inchluded in data structure names)
     TString     fsOutputFileFormat; // [pdf] format of output files (pictures)
     TString     fsGlobalProfNameLabel; // global profile label for all task
+    Bool_t      fbSaveSlices; // [kTRUE] save slices of reconstructed particles
     Bool_t      fbSaveMult; // [kFALSE]
     Bool_t      fFlowFitCumulants; // [kFALSE]
 
@@ -387,6 +390,7 @@ class ProcessUniFlow
 ProcessUniFlow::ProcessUniFlow() :
   fbDebug(kFALSE),
   fbInit(kFALSE),
+  fbSaveSlices(kTRUE),
   fbSaveMult(kFALSE),
   fFlowFitCumulants(kFALSE),
   fSaveInterSteps(kFALSE),
@@ -2383,6 +2387,9 @@ Bool_t ProcessUniFlow::PrepareSlicesNew(FlowTask* task, TString histName, Bool_t
     }
   }
 
+  if(fbSaveSlices && !SaveSlices(task)) { Error("","PrepareSlicesNew"); return kFALSE; }
+
+
   return kTRUE;
 }
 
@@ -2558,6 +2565,15 @@ Bool_t ProcessUniFlow::MakeSparseSlices(FlowTask* task, THnSparse* inputSparse, 
   } // end-for {binMult}
 
   Debug("Successfull!","MakeSparseSlices");
+  return kTRUE;
+}
+//_____________________________________________________________________________
+Bool_t ProcessUniFlow::SaveSlices(FlowTask* task)
+{
+  if(!task) { Error("FlowTask does not exist!","SaveSlices"); return kFALSE; }
+
+
+
   return kTRUE;
 }
 //_____________________________________________________________________________
