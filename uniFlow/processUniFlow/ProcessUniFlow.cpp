@@ -1100,7 +1100,7 @@ TH1D* ProcessUniFlow::CalcRefCumFour(TProfile* hFourRef, TProfile* hTwoRef, Flow
   histCum->SetTitle(Form("%s: c_{%d}{4%s}",task->GetSpeciesName().Data(), task->fHarmonics, sGap.Data()));
   histCum->Reset();
 
-  for(Int_t iBin(0); iBin < hFourRef->GetNbinsX()+2; ++iBin)
+  for(Int_t iBin(1); iBin < hFourRef->GetNbinsX()+1; ++iBin)
   {
     Double_t dContInFour = hFourRef->GetBinContent(iBin);
     Double_t dErrInFour = hFourRef->GetBinError(iBin);
@@ -1117,6 +1117,7 @@ TH1D* ProcessUniFlow::CalcRefCumFour(TProfile* hFourRef, TProfile* hTwoRef, Flow
     Double_t dErrOut = TMath::Power(dErrOutFour, 2.0) + TMath::Power(dErrOutTwo, 2.0);
     if(bCorrel) { dErrOut += 2.0 * dErrOutFour * dErrOutTwo; }
     histCum->SetBinError(iBin, TMath::Sqrt(dErrOut));
+    Debug(Form("bin %2d : cn{4} = %g - 2*%g^2 = %g", iBin, dContInFour, dContInTwo, dContOut),"CalcRefCumFour");
   }
 
   return histCum;
@@ -1182,7 +1183,7 @@ TH1D* ProcessUniFlow::CalcDifCumFour(TH1D* hFourDif, TH1* hTwoDif, TH1* hTwoRef,
   Double_t dContInTwoRef = hTwoRef->GetBinContent(iRefBin);
   Double_t dErrInTwoRef = hTwoRef->GetBinError(iRefBin);
 
-  for(Int_t iBin(0); iBin < histCum->GetNbinsX()+2; ++iBin)
+  for(Int_t iBin(1); iBin < histCum->GetNbinsX()+1; ++iBin)
   {
     Double_t dContInFourDif = hFourDif->GetBinContent(iBin);
     Double_t dErrInFourDif = hFourDif->GetBinError(iBin);
@@ -1200,6 +1201,7 @@ TH1D* ProcessUniFlow::CalcDifCumFour(TH1D* hFourDif, TH1* hTwoDif, TH1* hTwoRef,
     Double_t dErrOutSq = TMath::Power(dErrOutFour, 2.0) + TMath::Power(dErrOutTwoDif, 2.0) + TMath::Power(dErrOutTwoRef, 2.0);
     if(bCorrel) { dErrOutSq += 2.0 * dErrOutFour * dErrOutTwoDif + 2.0 * dErrOutFour * dErrOutTwoRef + 2.0 * dErrOutTwoDif * dErrOutTwoRef; }
     histCum->SetBinError(iBin, TMath::Sqrt(dErrOutSq));
+    Debug(Form("bin %2d : dn{4} = %g - 2*%g*%g = %g", iBin, dContInFourDif, dContInTwoDif, dContInTwoRef, dContOut),"CalcDifCumFour");
   }
 
   return histCum;
@@ -1219,7 +1221,7 @@ TH1D* ProcessUniFlow::CalcRefFlowTwo(TH1D* hTwoRef, FlowTask* task)
   histFlow->SetTitle(Form("%s: v_{%d}{2%s}",task->GetSpeciesLabel().Data(), task->fHarmonics, sGap.Data()));
   histFlow->Reset();
 
-  for(Short_t iBin(0); iBin < hTwoRef->GetNbinsX()+2; ++iBin)
+  for(Int_t iBin(1); iBin < hTwoRef->GetNbinsX()+1; ++iBin)
   {
     Double_t dContIn = hTwoRef->GetBinContent(iBin);
     Double_t dErrIn = hTwoRef->GetBinError(iBin);
@@ -1255,7 +1257,7 @@ TH1D* ProcessUniFlow::CalcRefFlowFour(TH1D* hFourRef, FlowTask* task)
   histFlow->SetTitle(Form("%s: v_{%d}{4%s}",task->GetSpeciesLabel().Data(), task->fHarmonics, sGap.Data()));
   histFlow->Reset();
 
-  for(Short_t iBin(0); iBin < hFourRef->GetNbinsX()+2; ++iBin)
+  for(Int_t iBin(1); iBin < hFourRef->GetNbinsX()+1; ++iBin)
   {
     Double_t dContIn = hFourRef->GetBinContent(iBin);
     Double_t dErrIn = hFourRef->GetBinError(iBin);
@@ -1266,6 +1268,7 @@ TH1D* ProcessUniFlow::CalcRefFlowFour(TH1D* hFourRef, FlowTask* task)
       histFlow->SetBinContent(iBin, dContOut);
       Double_t dErrOutSq = TMath::Power(0.25 * dErrIn * TMath::Power(-dContIn, -0.75), 2.0);
       histFlow->SetBinError(iBin, TMath::Sqrt(dErrOutSq));
+      Debug(Form("bin %2d : vn{4} = (-1*%g)^(0,25) = %g", iBin, dContIn, dContOut),"CalcRefFlowFour");
     }
     else
     {
@@ -1299,7 +1302,7 @@ TH1D* ProcessUniFlow::CalcDifFlowTwo(TH1D* hTwoDif, TH1D* hTwoRef, Int_t iRefBin
   // flow not real -> putting 'wrong' numbers in
   if(dContInRef < -9.0 || (dContInRef <= 0.0 && dErrInRef > 1000))
   {
-    for(Short_t iBin(0); iBin < histFlow->GetNbinsX()+2; ++iBin)
+    for(Int_t iBin(1); iBin < histFlow->GetNbinsX()+1; ++iBin)
     {
       histFlow->SetBinContent(iBin, -9.9);
       histFlow->SetBinError(iBin, 99999.9);
@@ -1309,7 +1312,7 @@ TH1D* ProcessUniFlow::CalcDifFlowTwo(TH1D* hTwoDif, TH1D* hTwoRef, Int_t iRefBin
   }
 
   // flow real -> correct analytical calculation
-  for(Short_t iBin(0); iBin < histFlow->GetNbinsX()+2; ++iBin)
+  for(Int_t iBin(1); iBin < histFlow->GetNbinsX()+1; ++iBin)
   {
     Double_t dContInDif = hTwoDif->GetBinContent(iBin);
     Double_t dErrInDif = hTwoDif->GetBinError(iBin);
@@ -1350,7 +1353,7 @@ TH1D* ProcessUniFlow::CalcDifFlowFour(TH1D* hFourDif, TH1D* hFourRef, Int_t iRef
   // flow not real -> putting 'wrong' numbers in
   if(dContInRef <= 0.0 || (dContInRef < -9.0 && dErrInRef > 1000))
   {
-    for(Short_t iBin(0); iBin < histFlow->GetNbinsX()+2; ++iBin)
+    for(Int_t iBin(1); iBin < histFlow->GetNbinsX()+1; ++iBin)
     {
       histFlow->SetBinContent(iBin, -9.9);
       histFlow->SetBinError(iBin, 99999.9);
@@ -1360,7 +1363,7 @@ TH1D* ProcessUniFlow::CalcDifFlowFour(TH1D* hFourDif, TH1D* hFourRef, Int_t iRef
   }
 
   // flow real -> correct analytical calculation
-  for(Short_t iBin(0); iBin < histFlow->GetNbinsX()+2; ++iBin)
+  for(Int_t iBin(1); iBin < histFlow->GetNbinsX()+1; ++iBin)
   {
     Double_t dContInDif = hFourDif->GetBinContent(iBin);
     Double_t dErrInDif = hFourDif->GetBinError(iBin);
@@ -1374,6 +1377,7 @@ TH1D* ProcessUniFlow::CalcDifFlowFour(TH1D* hFourDif, TH1D* hFourRef, Int_t iRef
     Double_t dErrOutSq = TMath::Power(dErrOutDif, 2.0) + TMath::Power(dErrOutRef, 2.0);
     if(bCorrel) { dErrOutSq += 2.0 * dErrOutDif * dErrOutRef; }
     histFlow->SetBinError(iBin, TMath::Sqrt(dErrOutSq));
+    Debug(Form("bin %2d : vn{4} = -1 * %g / (%g)^3 = %g / %g = %g", iBin, dContInDif, dContInRef, -1.0*dContInDif, TMath::Power(dContInRef, +3.0),  dContOut), "CalcDifFlowFour");
   }
 
   return histFlow;
@@ -3769,11 +3773,8 @@ Bool_t ProcessUniFlow::ExtractFlowOneGo(FlowTask* task, TH1* hInvMass, TH1* hInv
   Int_t iNumParLimHigh = dParLimHigh.size();
 
   // check the output of the vector assigment
-  if(fbDebug)
-  {
-    Debug("Post ifs","ExtractFlowOneGo");
-    for(Int_t par(0); par < iNumParDefs; ++par) { printf("  par %d: %g (%g<%g)\n",par, dParDef.at(par), dParLimLow.at(par), dParLimHigh.at(par)); }
-  }
+  Debug("Post ifs","ExtractFlowOneGo");
+  for(Int_t par(0); par < iNumParDefs; ++par) { Debug(Form("  par %d: %g (%g<%g)",par, dParDef.at(par), dParLimLow.at(par), dParLimHigh.at(par)),"ExtractFlowOneGo"); }
 
   if(iNumParDefs != iNumParsMassBG+iNumParsMassSig+iNumParsFlowBG) { Error(Form("Length of dParDef array does not match number of parameters (%d != %d)",iNumParDefs,iNumParsMassBG+iNumParsMassSig+iNumParsFlowBG),"ExtractFlowOneGo"); return kFALSE; }
   if(iNumParDefs != iNumParLimLow) { Error(Form("Different length of arrays with parameter defauls and low limit values (%d != %d).",iNumParDefs,iNumParLimLow),"ExtractFlowOneGo"); return kFALSE; }
