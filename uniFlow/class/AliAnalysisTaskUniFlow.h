@@ -42,6 +42,41 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       enum    SparseCand {kInvMass = 0, kCent, kPt, kEta, kDim}; // reconstructed candidates dist. dimensions
       enum    QAindex { kBefore = 0, kAfter, kNumQA}; // index for filling QA status
 
+      class UniFlowTrack
+      {
+        public:
+                              UniFlowTrack() : fSpecies{kUnknown}, fPt{-1.0}, fPhi{-1.0}, fEta{-9.0}, fWeight{1.0}, fMass{-1.0}, fTrack{nullptr} {}; //
+                              UniFlowTrack(PartSpecies spec, Double_t pt, Double_t phi, Double_t eta, Double_t w = 1.0, Double_t mass = -1.0, const AliVTrack* track = nullptr) : fSpecies{spec}, fPt{pt}, fPhi{phi}, fEta{eta}, fWeight{w}, fMass{mass}, fTrack{track} {}; //
+                              UniFlowTrack(PartSpecies spec, const AliVTrack* track) : UniFlowTrack{} { if(track) { fSpecies = spec; fPt = track->Pt(); fPhi = track->Phi(); fEta = track->Eta(); fTrack = track; } }; //
+                              // UniFlowTrack(const UniFlowTrack&); // not implemented
+                              // UniFlowTrack& operator=(const UniFlowTrack&); // not implemented
+                              ~UniFlowTrack() { fTrack = nullptr; };
+
+          // void          SetPt(Double_t pt) { fPt = pt; }
+          // void          SetPhi(Double_t phi) { fPhi = phi; }
+          // void          SetEta(Double_t eta) { fEta = eta; }
+        void                  SetWeight(Double_t weight) { fWeight = weight; }
+        void                  SetMass(Double_t mass) { fMass = mass; }
+          // void          SetSpecies(PartSpecies species) { fSpecies = species; }
+
+        PartSpecies           Species() const { return fSpecies; };
+        Double_t              Pt() const { return fPt; };
+        Double_t              Phi() const { return fPhi; };
+        Double_t              Eta() const { return fEta; };
+        Double_t              Weight() const { return fWeight; };
+        Double_t              Mass() const { return fMass; };
+        const AliVTrack*      Track() const { return fTrack; }
+
+        private:
+          PartSpecies         fSpecies; // species
+          Double_t            fPt; // track pT
+          Double_t            fPhi; // track phi
+          Double_t            fEta; // track eta
+          Double_t            fWeight; // track flow weight (ala Generic Framework)
+          Double_t            fMass; // particle mass
+          const AliVTrack*    fTrack; //! original (assosiated) track from which this one was created (if any)
+      };
+
       class CorrTask
       {
         public:
@@ -63,7 +98,6 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
         protected:
         private:
       };
-
                               AliAnalysisTaskUniFlow(); // constructor
                               AliAnalysisTaskUniFlow(const char *name, ColSystem colSys, Bool_t bUseWeights = kFALSE); // named (primary) constructor
                               AliAnalysisTaskUniFlow(const AliAnalysisTaskUniFlow&); // not implemented
@@ -180,6 +214,7 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       Bool_t                  LoadWeights(); // load weights histograms
       Bool_t                  FillFlowWeight(const AliVTrack* track, PartSpecies species) const; // fill distribution for per-particle flow weight
       Double_t                GetFlowWeight(const AliVTrack* track, PartSpecies species) const; // extract per-particle flow weight from input file
+      Double_t                GetFlowWeight(const UniFlowTrack* track) const; // extract per-particle flow weight from input file
       void                    ListParameters() const; // list all task parameters
       void                    ClearVectors(); // properly clear all particle vectors
       void                    DumpTObjTable(const char* note, Option_t* opt = "") const; // add a printf statmenet given by note followed by gObjTable->Print() dump
