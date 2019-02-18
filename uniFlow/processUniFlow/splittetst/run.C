@@ -1,7 +1,9 @@
-#include "Process.h"
+#include <stdio.h>
+
+// #include "Process.h"
 
 void run()
 {
-  gInterpreter->LoadMacro("Process.cxx++g");
   Process pr = Process();
+  std::cout << pr.fVal << std::endl;
 }

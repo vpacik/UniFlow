@@ -9,7 +9,7 @@ class Process
   public:
     Process();
     ~Process();
-  private:
+
     Double_t fVal;
     TObject fObject;
     Task fTask;
