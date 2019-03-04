@@ -134,6 +134,7 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow() : AliAnalysisTaskSE(),
   fDumpTObjectTable{kFALSE},
   fSampling{kFALSE},
   fFillQA{kTRUE},
+  fStudyCorrs{kFALSE},
   fProcessSpec{},
   fFlowRFPsPtMin{0.2},
   fFlowRFPsPtMax{5.0},
@@ -393,6 +394,7 @@ AliAnalysisTaskUniFlow::AliAnalysisTaskUniFlow(const char* name, ColSystem colSy
   fDumpTObjectTable{kFALSE},
   fSampling{kFALSE},
   fFillQA{kTRUE},
+  fStudyCorrs{kFALSE},
   fProcessSpec{},
   fFlowRFPsPtMin{0.2},
   fFlowRFPsPtMax{5.0},
@@ -2890,6 +2892,87 @@ void AliAnalysisTaskUniFlow::CalculateCorrelations(const CorrTask* const task, c
   return;
 }
 // ============================================================================
+Bool_t AliAnalysisTaskUniFlow::StudyCorrCorrelations()
+{
+  // Fill flow vectors
+  FillRefsVectors(-1.0);
+  FillPOIsVectors(-1.0, kCharged, 1.0, 2.0);
+
+  Double_t dNom = 0.0;
+  Double_t dDenom = 0.0;
+
+  // <<2>>
+  Double_t dValTwo = -9999.0;
+  Double_t dWeightTwo = -9999.0;
+  Bool_t bHasTwo = kFALSE;
+
+  dDenom = Two(0,0).Re();
+  dNom = Two(2,-2).Re();
+
+  if(dDenom > 0.0) { dValue = dNom / dDenom; }
+  if(TMath::Abs(dValue) <= 1.0) {
+    dValTwo = dValue;
+    dWeightTwo = dDenom;
+    bHasTwo = kTRUE;
+  }
+
+  // <<2'>>
+  Double_t dValTwoDiff = -9999.0;
+  Double_t dWeightTwoDiff = -9999.0;
+  Bool_t bHasTwoDiff = kFALSE;
+
+  dDenom = TwoDiff(0,0).Re();
+  dNom = TwoDiff(2,-2).Re();
+
+  if(dDenom > 0.0) { dValue = dNom / dDenom; }
+  if(TMath::Abs(dValue) <= 1.0) {
+    dValTwoDiff = dValue;
+    dWeightTwoDiff = dDenom;
+    bHasTwoDiff = kTRUE;
+  }
+
+  // <<4>>
+  Double_t dValFour = -9999.0;
+  Double_t dWeightFour = -9999.0;
+  Bool_t bHasFour = kFALSE;
+
+  dDenom = Four(0,0,0,0).Re();
+  dNom = Four(2,2,-2,-2).Re();
+
+  if(dDenom > 0.0) { dValue = dNom / dDenom; }
+  if(TMath::Abs(dValue) <= 1.0) {
+    dValFour = dValue;
+    dWeightFour = dDenom;
+    bHasFour = kTRUE;
+  }
+
+  // <<4'>>
+  Double_t dValFourDiff = -9999.0;
+  Double_t dWeightFourDiff = -9999.0;
+  Bool_t bHasFourDiff = kFALSE;
+
+  dDenom = FourDiff(0,0,0,0).Re();
+  dNom = FourDiff(2,2,-2,-2).Re();
+
+  if(dDenom > 0.0) { dValue = dNom / dDenom; }
+  if(TMath::Abs(dValue) <= 1.0) {
+    dValFourDiff = dValue;
+    dWeightFourDiff = dDenom;
+    bHasFourDiff = kTRUE;
+  }
+
+  // Filling correlations histogram
+  if(bHasFour && bHasTwo) {
+    TH2D* hist = (TH2D*) fQACharged->FindObject("fh2CorrTwoFour");
+    if(!hist) { AliError("Histo 'fh2CorrTwoFour' not recovered."); return kFALSE; }
+    hist->TH2D::Fill();
+  }
+
+
+
+  return kTRUE;
+}
+// ============================================================================
 Bool_t AliAnalysisTaskUniFlow::CalculateFlow()
 {
   // main (envelope) method for flow calculations in selected events
@@ -2907,6 +2990,8 @@ Bool_t AliAnalysisTaskUniFlow::CalculateFlow()
     Bool_t process = ProcessCorrTask(fVecCorrTask.at(iTask));
     if(!process) { AliError("CorrTask processing failed!\n"); fVecCorrTask.at(iTask)->Print(); return kFALSE; }
   }
+
+  if(fStudyCorrs && !StudyCorrCorrelations()) { AliError("Correlators correlations study ON but Failed!"); }
 
   fEventCounter++; // counter of processed events
 
@@ -3554,6 +3639,27 @@ void AliAnalysisTaskUniFlow::UserCreateOutputObjects()
         } // end-for {iSample}
       } // end-for {iSpec}
     } // end-for {iTask}
+
+    // Test study correlabtions among correlations
+    if(fStudyCorrs) {
+
+      // Creating histogram
+
+      TH2D* fh2CorrTwoFour = new TH2D("fh2CorrTwoFour","fh2CorrTwoFour; <<2>>; <<4>>", 100,-1,1, 100,-1,1);
+      fQACharged->Add(fh2CorrTwoFour);
+
+      TH2D* fh2CorrTwoTwoDiff = new TH2D("fh2CorrTwoTwoDiff","fh2CorrTwoTwoDiff; <<2>>; <<2'>>", 100,-1,1, 100,-1,1);
+      fQACharged->Add(fh2CorrTwoTwoDiff);
+
+      TH2D* fh2CorrTwoDiffFourDiff = new TH2D("fh2CorrTwoDiffFourDiff","fh2CorrTwoDiffFourDiff; <<2'>>; <<4'>>", 100,-1,1, 100,-1,1);
+      fQACharged->Add(fh2CorrTwoDiffFourDiff);
+
+      TH2D* fh2CorrFourDiffTwo = new TH2D("fh2CorrFourDiffTwo","fh2CorrFourDiffTwo; <<4'>>; <<2>>", 100,-1,1, 100,-1,1);
+      fQACharged->Add(fh2CorrFourDiffTwo);
+
+      TH2D* fh2CorrFourDiffFour = new TH2D("fh2CorrFourDiffFour","fh2CorrFourDiffFour; <<4'>>; <<4>>", 100,-1,1, 100,-1,1);
+      fQACharged->Add(fh2CorrFourDiffFour);
+    }
 
     // Making THnSparse distribution of candidates
     // species independent

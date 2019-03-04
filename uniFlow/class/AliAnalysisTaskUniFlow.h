@@ -81,6 +81,7 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       void					          SetAnalysisType(AnalType type = kAOD) { fAnalType = type; }
       void                    SetSampling(Bool_t sample = kTRUE, Int_t iNum = 10) { fSampling = sample; fNumSamples = iNum; }
       void                    SetFillQAhistos(Bool_t fill = kTRUE) { fFillQA = fill; }
+      void                    SetStudyCorrelations(Bool_t use = kTRUE) { fStudyCorrs = use; }
       void                    SetProcessPID(Bool_t use = kTRUE) { fProcessSpec[kPion] = use; fProcessSpec[kKaon] = use; fProcessSpec[kProton] = use; }
       void                    SetProcessV0s(Bool_t use = kTRUE) { fProcessSpec[kK0s] = use; fProcessSpec[kLambda] = use; }
       void                    SetProcessPhi(Bool_t use = kTRUE) { fProcessSpec[kPhi] = use; }
@@ -190,6 +191,7 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       const char*             GetCentEstimatorLabel(CentEst est) const; // returns mult/cent estimator string with label or 'n/a' if not available
 
       void                    CalculateCorrelations(const CorrTask* task, PartSpecies species, Double_t dPt = -1.0, Double_t dMass = -1.0) const; // wrapper for correlations methods
+      Bool_t                  StudyCorrCorrelations(); // study correlations among correlators (if fStudyCorrs is true)
       Bool_t                  ProcessCorrTask(const CorrTask* task); // procesisng of CorrTask
       Bool_t                  CalculateFlow(); // main (envelope) method for flow calculations in selected events
 
@@ -291,6 +293,7 @@ class AliAnalysisTaskUniFlow : public AliAnalysisTaskSE
       Bool_t                  fDumpTObjectTable; // [kFALSE] flag for dumping TObjectTable to the output stream
       Bool_t                  fSampling; // [kFALSE] Do random sampling ? (estimation of vn stat. uncertanity)
       Bool_t                  fFillQA; //[kTRUE] flag for filling the QA plots
+      Bool_t                  fStudyCorrs; // [kFALSE] flag for studying correlations between correlations
       Bool_t                  fProcessSpec[kUnknown];  // [false] flag for processing species
       // cuts & selection: flow related
       Double_t                fFlowRFPsPtMin; // [0.2] (GeV/c) min pT treshold for RFPs particle for reference flow

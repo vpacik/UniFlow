@@ -89,6 +89,7 @@ void runDev()
     task1->SetProcessPhi(1);
     task1->SetProcessV0s(1);
     task1->SetCentrality(AliAnalysisTaskUniFlow::kV0M,0,90,90);
+    task1->SetStudyCorrelations();
     // weigths
     task1->SetFlowFillWeights(0);
     task1->SetUseWeigthsRunByRun(0);
