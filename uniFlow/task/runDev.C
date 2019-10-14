@@ -9,8 +9,8 @@
 
 void runDev()
 {
-    Bool_t local = 1; // set if you want to run the analysis locally (kTRUE), or on grid (kFALSE)
-    Bool_t gridTest = 1; // if you run on grid, specify test mode (kTRUE) or full grid model (kFALSE)
+    Bool_t local = 0; // set if you want to run the analysis locally (kTRUE), or on grid (kFALSE)
+    Bool_t gridTest = 0; // if you run on grid, specify test mode (kTRUE) or full grid model (kFALSE)
 
     TString sGridMode = "full";
     // TString sGridMode = "terminate";
@@ -18,7 +18,7 @@ void runDev()
     Bool_t bMergeViaJDL = kTRUE;
     // Bool_t bMergeViaJDL = kFALSE;
 
-    TString sWorkDir = "15o-hi-pass1-qa";
+    TString sWorkDir = "dummy";
     TString sOutDir = "output";
 
     // Pb-Pb Run2 5.02 TeV (Run2) : RunList_LHC15o_pass1_CentralBarrelTracking_hadronPID_20161130_v6.txt [77 runs]
@@ -82,7 +82,7 @@ void runDev()
 
     // AliAnalysisTaskUniFlow* task1 = AddTaskUniFlow("UniFlow");
     // Analysis
-    task1->SetRunMode(AliAnalysisTaskUniFlow::kFull);
+    task1->SetRunMode(AliAnalysisTaskUniFlow::kTest);
     task1->SetNumEventsAnalyse(10);
     task1->SetSampling(0);
     task1->SetFillQAhistos(0);
@@ -170,11 +170,12 @@ void runDev()
         // also specify the include (header) paths on grid
         alienHandler->AddIncludePath("-I$ROOTSYS/include -I$ALICE_ROOT/include -I$ALICE_PHYSICS/include");
         // make sure your source files get copied to grid
-        alienHandler->SetAdditionalLibs("AliUniFlowCorrTask.cxx AliUniFlowCorrTask.h AliAnalysisTaskUniFlow.cxx AliAnalysisTaskUniFlow.h  libPWGEMCALbase.so");
-        alienHandler->SetAnalysisSource("AliUniFlowCorrTask.cxx AliAnalysisTaskUniFlow.cxx ");
+        alienHandler->SetAdditionalLibs("PWGCFFLOWGF.par libPWGEMCALbase.so");
+        // alienHandler->SetAnalysisSource("AliUniFlowCorrTask_cxx.so AliAnalysisTaskUniFlow_cxx.so");
+        // alienHandler->SetAnalysisSource("AliUniFlowCorrTask.cxx  AliAnalysisTaskUniFlow.cxx");
         // select the aliphysics version. all other packages
         // are LOADED AUTOMATICALLY!
-        alienHandler->SetAliPhysicsVersion("vAN-20181002_ROOT6-1");
+        alienHandler->SetAliPhysicsVersion("vAN-20190819_ROOT6-1");
         //alienHandler->SetAliPhysicsVersion("vAN-20160131-1");
         // select the input data
         alienHandler->SetGridDataDir(Form("/alice/data/%s",sPeriod.Data()));
