@@ -7,7 +7,7 @@ void PlotFlowMass() {
 
     SetStyle();
 
-    TString sPath = "/Users/vpacik/Codes/ALICE/Flow/uniFlow/results/non_linear_modes/output/Phi/";
+    TString sPath = "/Users/vpacik/Codes/ALICE/Flow/uniFlow/results/PbPb/non_linear_modes/output/Phi/";
     TString sListName = "Phi_<<3>>(4,-2,-2)_2sub(0)_cent2_pt3;1";
     Bool_t bPlotSig = 1;
     Bool_t bPrel = kFALSE;
@@ -107,13 +107,13 @@ void PlotFlowMass() {
     TLegend* leg1 = new TLegend(0.55,0.1,0.85,0.5);
     leg1->SetFillColorAlpha(0,0);
     // leg1->SetHeader("0.2 < #it{p}_{T} < 3.0 GeV/#it{c}^{2}, |#eta| < 0.8");
-    leg1->AddEntry(hMass,"K^{+}+K^{-} yield","pl");
+    leg1->AddEntry(hMass,"K^{+}+K^{-} yield","p");
     // leg1->AddEntry(fitMass,"fit","l");
     if(bPlotSig) {
-        leg1->AddEntry(hMassSig,"#phi #rightarrow K^{+} + K^{-}","pl");
+        leg1->AddEntry(hMassSig,"#phi #rightarrow K^{+} + K^{-}","p");
         leg1->AddEntry(fitMassSig,"Breit-Wigner fit","l");
     }
-    leg1->AddEntry(fitCorr,"d_{4,22}^{total} fit","l");
+    leg1->AddEntry(fitCorr,"#it{d}_{4,22}^{total} fit","l");
 
     TLegend* leg2 = new TLegend(0.22,0.2,0.4,0.5);
     leg2->SetFillColorAlpha(0,0);
@@ -176,7 +176,7 @@ void PlotFlowMass() {
     // // Ratio plot (frame2) settings
     frame2->SetTitle(""); // Remove the ratio title
 
-    frame2->GetYaxis()->SetTitle("d^{total}_{4,22} (#times10^{-3})");
+    frame2->GetYaxis()->SetTitle("#it{d}^{total}_{4,22} (#times10^{-3})");
     // frame2->GetYaxis()->SetNoExponent();
     frame2->GetYaxis()->SetNdivisions(505);
     frame2->GetYaxis()->SetTitleSize(20);
@@ -185,14 +185,14 @@ void PlotFlowMass() {
     frame2->GetYaxis()->SetLabelFont(43);
     frame2->GetYaxis()->SetLabelSize(15);
 
-    frame2->GetXaxis()->SetTitle("M_{inv} (GeV/#it{c}^{2})");
+    frame2->GetXaxis()->SetTitle("#it{M}_{inv} (GeV/#it{c}^{2})");
     frame2->GetXaxis()->SetTitleSize(20);
     frame2->GetXaxis()->SetTitleFont(43);
     frame2->GetXaxis()->SetTitleOffset(2.4);
     frame2->GetXaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
     frame2->GetXaxis()->SetLabelSize(15);
 
-    c->SaveAs(Form("%s/flowmass_%s.pdf",sPath.Data(),sListName.Data()),"pdf");
+    c->SaveAs(Form("%s/flowmass_new_%s.pdf",sPath.Data(),sListName.Data()),"pdf");
 
 }
 // =============================================================================
